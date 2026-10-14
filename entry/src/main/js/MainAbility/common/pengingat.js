@@ -19,6 +19,9 @@
  *   - Otomatis DIPASANG ULANG setiap aplikasi dibuka / ganti hari,
  *     sehingga cukup buka aplikasi sekali sehari (mis. saat Subuh) untuk
  *     memastikan alarm hari berikutnya terpasang.
+ *   - JARING PENGAMAN: bila firmware menolak hmAlarm, Metode A tetap
+ *     menjamin pengingat berbunyi selama aplikasi terbuka — dan alarm B
+ *     dicoba pasang ulang otomatis tiap siklus sampai modul terdeteksi.
  * ============================================================================
  */
 
