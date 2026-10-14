@@ -26,7 +26,7 @@
   </div>
 
   <!-- ===== PERINGATAN BILA DATA BELUM DIAISI ===== -->
-  <div class="kosong" if="{{ !tersedia }}">
+  <div class="kosong" if="{{ tidakTersedia }}">
     <text class="kosong-teks">Jadwal belum tersedia. Isi blok data di common/jadwal-sholat.js</text>
   </div>
 
@@ -34,15 +34,21 @@
        CATATAN KOMPILER LiteWearable:
        - class selector TIDAK mendukung data binding, jadi `class="baris {{ ... }}"`
          akan ERROR saat LegacyCompileLiteJS. Solusi: kelas baris bersifat statis
-         dan warna/opacity per-status dibawa lewat ATRIBUT LANGSUNG (style binding
-         seperti `color` memang didukung), bukan lewat pergantian kelas.
+         dan warna/opacity per-status dibawa lewat ATRIBUT TAG tunggal
+         (`color`, `background-color`, `opacity`) — bukan lewat `style=` maupun
+         pergantian kelas.
+       - Nilai opacity dikirim sebagai STRING dari index.js — runtime liteWearable
+         lebih andal menerima nilai atribut berupa string.
        - `<list>`/`<list-item>` juga punya keterbatasan gaya per-item; karena hanya
          ada 5 baris, dipakai `<div>` + `for` biasa (tanpa virtual list). -->
   <div class="daftar" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" class="baris" style="background-color: {{ $item.bg }}; opacity: {{ $item.opacity }}">
-      <text class="penanda" style="color: {{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
-      <text class="nama" style="color: {{ $item.warnaTeks }}">{{ $item.nama }}</text>
-      <text class="waktu" style="color: {{ $item.warnaTeks }}">{{ $item.waktu }}</text>
+    <!-- CATATAN: binding atribut `style="..."` TIDAK didukung runtime liteWearable
+         (dulu menjadi penyebab layar blank). Atribut yang di-binding harus berupa
+         atribut tunggal seperti `color`, `background-color`, `opacity`. -->
+    <div for="{{ jadwal }}" class="baris" background-color="{{ $item.bg }}" opacity="{{ $item.opacity }}">
+      <text class="penanda" color="{{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
+      <text class="nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
+      <text class="waktu" color="{{ $item.warnaTeks }}">{{ $item.waktu }}</text>
     </div>
   </div>
 

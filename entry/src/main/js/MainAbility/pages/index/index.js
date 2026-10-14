@@ -23,6 +23,7 @@ export default {
     tanggalHariIni: '',
     jamSekarang: '',
     tersedia: false,
+    tidakTersedia: true, // kebalikan eksplisit (hindari operator '!' di binding)
     namaBerikutnya: '',
     waktuBerikutnya: '',
     sisaWaktu: '',
@@ -30,22 +31,32 @@ export default {
   },
 
   onInit() {
-    this.refresh();
+    // Proteksi total: exception saat memuat halaman TIDAK boleh lolos ke
+    // runtime liteWearable (gejala bila lolos: layar blank hitam).
+    try {
+      this.refresh();
+    } catch (e) {
+      console.warn('[index] onInit dicegat: ' + e);
+    }
   },
 
   onShow() {
-    // Nyalakan kedua metode pengingat saat halaman tampil
-    aktifkanSemuaMetode();
-    this.refresh();
+    try {
+      // Nyalakan kedua metode pengingat saat halaman tampil
+      aktifkanSemuaMetode();
+      this.refresh();
+    } catch (e) {
+      console.warn('[index] onShow dicegat: ' + e);
+    }
   },
 
   onHide() {
     // Matikan timer Metode A; alarm sistem (Metode B) tetap bekerja sendiri
-    hentikanPemantauan();
+    try { hentikanPemantauan(); } catch (e) { console.warn('' + e); }
   },
 
   onDestroy() {
-    hentikanPemantauan();
+    try { hentikanPemantauan(); } catch (e) { console.warn('' + e); }
   },
 
   /** Hitung ulang seluruh data tampilan dari jam sistem + blok jadwal. */
@@ -56,6 +67,7 @@ export default {
     this.tanggalHariIni = formatTanggalID(now);
     this.jamSekarang = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
     this.tersedia = st.tersedia;
+    this.tidakTersedia = !st.tersedia;
 
     if (st.tersedia) {
       // Kartu berikutnya
@@ -109,18 +121,20 @@ function penandaStatus(it) {
 }
 
 /** Palet warna per-status (dipakai binding atribut, bukan pergantian kelas —
-    karena class selector LiteWearable tidak mendukung data binding). */
+    karena class selector LiteWearable tidak mendukung data binding).
+    opacity dikirim sebagai STRING agar runtime liteWearable menerima tipe
+    yang paling andal untuk nilai atribut. */
 function temaStatus(status) {
   if (status === 'lewat') {
     // redup agar fokus pada waktu yang tersisa
-    return { bg: '#000000', teks: '#5f6368', penanda: '#5f6368', opacity: 1 };
+    return { bg: '#000000', teks: '#5f6368', penanda: '#5f6368', opacity: '1' };
   }
   if (status === 'berlangsung') {
     // masa 10 menit menjelang masuk waktu (hijau)
-    return { bg: '#0d3320', teks: '#6ee7a0', penanda: '#6ee7a0', opacity: 1 };
+    return { bg: '#0d3320', teks: '#6ee7a0', penanda: '#6ee7a0', opacity: '1' };
   }
   // mendatang / berikutnya
-  return { bg: '#101418', teks: '#e8eaed', penanda: '#7ec8ff', opacity: 1 };
+  return { bg: '#101418', teks: '#e8eaed', penanda: '#7ec8ff', opacity: '1' };
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */

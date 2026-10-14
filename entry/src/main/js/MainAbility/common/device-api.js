@@ -4,10 +4,10 @@
  * ============================================================================
  * Modul yang dipakai:
  *   - @system.vibrator    → getaran (API resmi, tersedia di liteWearable)
- *   - @ohos.hmAlarm       → alarm sistem: tetap berbunyi walau app ditutup.
- *                           (Modul bawaan HarmonyOS Lite Wearable; bila pada
- *                           SDK Anda modul ini tidak ada, cukup komentar
- *                           bagian pemanggilannya — Metode A tetap jalan.)
+ *   - hmAlarm             → alarm sistem: tetap berbunyi walau app ditutup.
+ *                           Dimuat lewat import statis dari common/hm-alarm.js
+ *                           (LIHAT CATATAN DI BAWAH — jangan pernah memakai
+ *                           fungsi global require() di runtime liteWearable).
  *   - @system.notification→ notifikasi teks di layar (Metode A)
  *
  * SEMUA pemanggilan dibungkus try/catch agar aplikasi tidak pernah crash
@@ -19,18 +19,32 @@
 import vibrator from '@system.vibrator';
 import notification from '@system.notification';
 
-// hmAlarm dimuat secara aman: bila modul tidak tersedia, nilai = null.
+// ============================================================================
+// PEMUATAN MODUL ALARM — SANGAT PENTING (penyebab lama "layar blank"):
+// Runtime liteWearable TIDAK mendukung fungsi global `require()`. Dulu modul
+// ini memuat hmAlarm lewat try { require('@ohos.hmAlarm') } — ReferenceError
+// yang muncul membuat seluruh file JS gagal dieksekusi sehingga halaman tidak
+// pernah ter-render (tersisa latar hitam + garis biru bawaan sistem).
+//
+// Solusi: import STATIS dari pembungkus common/hm-alarm.js. Pola DevEco untuk
+// modul @ohos.* adalah `import X from '@ohos.xxx'` lalu `new X()`; karena itu
+// hm-alarm.js mengimpor nama default HmAlarm dan mengekspor konstruktor apa
+// adanya. Bila SDK/firmware tidak menyediakan modulnya, bundler DevEco akan
+// MEMINTA Anda mengomentari SATU baris import di hm-alarm.js (satu titik saja,
+// lihat file tersebut) — Metode A tetap berjalan penuh.
+// ============================================================================
+import { HmAlarm } from './hm-alarm.js';
+
 var hmAlarm = null;
 try {
-  // Bentuk import dinamis paling kompatibel dengan toolchain DevEco Lite:
-  hmAlarm = require('@ohos.hmAlarm');
-} catch (e) {
-  try {
-    hmAlarm = require('hmAlarm'); // fallback nama modul pada sebagian SDK
-  } catch (e2) {
-    hmAlarm = null;
-    console.warn('[device-api] Modul hmAlarm tidak tersedia, Metode B dilewati.');
+  if (typeof HmAlarm === 'function') {
+    var _alarmIns = new HmAlarm();
+    if (_alarmIns && typeof _alarmIns.setAlarm === 'function') hmAlarm = _alarmIns;
+  } else if (HmAlarm && typeof HmAlarm.setAlarm === 'function') {
+    hmAlarm = HmAlarm; // beberapa SDK mengekspor objek fungsi langsung
   }
+} catch (e) {
+  hmAlarm = null; // Metode B dilewati dengan aman, tanpa crash
 }
 
 /* ------------------------------ GETARAN ---------------------------------- */
