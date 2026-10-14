@@ -18,9 +18,14 @@
 import vibrator from '@system.vibrator';
 import notification from '@system.notification';
 
-// Dimuat paling awal: JALUR 3 (import statis '@ohos.hmAlarm' + jembatan
-// registrasi ke alarm-resmi.js/global). Tidak dipakai langsung, cukup import.
-import './hm-alarm.js';
+// Catatan PENTING: import './hm-alarm.js' (jalur statis '@ohos.hmAlarm')
+// DINONAKTIFKAN permanen dari rantai modul — pada firmware GT 7 Pro paket
+// '@ohos.hmAlarm' tidak ada di registry JS sehingga loader lite mematikan
+// SELURUH rantai device-api → hmAlarm global sekalipun tak pernah terpakai
+// (penyebab utama "alarm tidak pernah bunyi"). Deteksi kini lewat jalur
+// runtime aman (globalThis / requireNapi) + import statis '@system.alarm'
+// yang resmi bawaan liteWearable (lihat common/alarm.js JALUR 5).
+// File common/hm-alarm.js tetap tersedia bila SDK Anda mendukungnya.
 
 import {
   deteksiModulAlarm,
@@ -94,6 +99,7 @@ export function pasangAlarmKejadian(ev) {
   return panggilSetAlarm({
     hour: ev.triggerJam,
     minute: ev.triggerMenitLokal,
+    days: (typeof ev.hariIso === 'number') ? [ev.hariIso] : null, // @system.alarm
     delayMs: selang * 60 * 1000,   // utk varian '@system.alarm' (when: ms)
     label: '⏰ ' + ev.nama + ' — masuk ' + ev.masuk + ' (H-' + (ev.menitSebelum || 10) + ' mnt)',
     vibration: true

@@ -50,9 +50,9 @@
        BUKAN binding pada class (ditolak LegacyCompileLiteJS), dan
        BUKAN atribut kustom lines/text-overflow (memicu warning). -->
   <div class="grid" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" tid="id" class="sel" background-color="{{ $item.bg }}">
-      <text class="sel-nama">{{ $item.nama }}</text>
-      <text class="sel-jam" color="{{ $item.warna }}">{{ $item.waktu }}</text>
+    <div for="{{ jadwal }}" tid="id" class="sel {{ $item.kelas }}">
+      <text class="sel-nama {{ $item.kelasNama }}">{{ $item.nama }}</text>
+      <text class="sel-jam {{ $item.kelasJam }}">{{ $item.waktu }}</text>
     </div>
   </div>
 

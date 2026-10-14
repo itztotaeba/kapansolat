@@ -228,6 +228,11 @@ export function kejadianPengingat(now, menitSebelum) {
         menitSebelum: menitSebelum,
         triggerJam: Math.floor(trigNorm / 60),
         triggerMenitLokal: trigNorm % 60,
+        /* Hari ISO (1=Senin..7=Minggu) tanggal KEY kejadian — dipakai
+           '@system.alarm' liteWearable untuk field `days`. Wrap tengah
+           malam (alarm Subuh H-10 = 03:5x) tetap pada hari yang sama
+           karena menit hanya mundur sedikit. */
+        hariIso: ((hr.d.getDay() + 6) % 7) + 1,
         /* ALIAS untuk kompatibilitas pemanggil lama (device-api.js versi
            PR#7 memakai ev.triggerMenit sebagai delay-menit Metode A). */
         triggerMenit: selang >= 0 ? selang : 0,

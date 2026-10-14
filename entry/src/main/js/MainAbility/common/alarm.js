@@ -38,7 +38,22 @@
 import { daftarkanModulStatis, tersedia as resmiTersedia,
          setAlarmHarian, batalkanSemua as batalkanResmi } from './alarm-resmi.js';
 import { daftarkanModulLegacy, tersedia as legacyTersedia,
-         setAlarmTunda, batalkanSemua as batalkanLegacy } from './alarm-legacy.js';
+         setAlarmLite, setAlarmTunda,
+         batalkanSemua as batalkanLegacy } from './alarm-legacy.js';
+
+/* JALUR 5 — IMPORT STATIS RESMI '@system.alarm'.
+   Modul keluarga '@system.*' (vibrator, notification, alarm) adalah modul
+   BAWAAN runtime liteWearable yang didukung LEGACY COMPILER DevEco; import
+   statis TIDAK bisa membuat rantai modul mati (berbeda dari '@ohos.hmAlarm'
+   yang dulu mematikan seluruh sistem alarm — lihat common/hm-alarm.js).
+   Inilah penyebab paling mungkin "alarm tidak pernah bunyi" pada versi
+   sebelumnya: '@system.alarm' tidak pernah di-import sama sekali, hanya
+   dicari di globalThis/requireNapi yang memang tidak menyimpannya. */
+import SysAlarmStatis from '@system.alarm';
+try {
+  var _sa = SysAlarmStatis && SysAlarmStatis.default ? SysAlarmStatis.default : SysAlarmStatis;
+  if (_sa) daftarkanModulLegacy(_sa);
+} catch (e) { /* modul kosong — Metode A tetap jalan penuh */ }
 
 /* Objek modul mentah hasil deteksi (varian A), plus status diagnostik. */
 var _modul = null;
@@ -165,7 +180,36 @@ export function panggilSetAlarm(o) {
   if (!modulAlarmTersedia()) return false;
   _percobaan++;
 
-  // ---- VARIAN A: hmAlarm resmi ({hour, minute, repeat:1, days:[]}) -------
+  // URUTAN DIPBALIK (penyebab kedua "alarm tak pernah bunyi"): pada firmware
+  // Anda '@ohos.hmAlarm' kemungkinan besar TIDAK ada, sedangkan
+  // '@system.alarm' adalah modul bawaan liteWearable. Versi lama mencoba
+  // hmAlarm lebih dulu dan mengembalikan true walau panggilan hanya
+  // dilempar tanpa jaminan → alarm @system.alarm tidak pernah dicoba.
+  // Sekarang VARIAN B (@system.alarm, penundaan milidetik — tidak punya
+  // masalah "jam sudah lewat") yang utama; VARIAN A cadangan.
+
+  // ---- VARIAN B: @system.alarm dengan penundaan ms (UTAMA) ---------------
+  if (legacyTersedia()) {
+    try {
+      // POLA RESMI liteWearable: { hour, minute, days[], label }
+      if (setAlarmLite({ hour: o.hour, minute: o.minute, days: o.days,
+                         label: o.label })) {
+        console.info('[alarm] diajukan via @system.alarm pola hour/minute');
+        return true;
+      }
+      // CADANGAN: varian firmware yang menerima penundaan milidetik
+      if (setAlarmTunda({ delayMs: o.delayMs, label: o.label,
+                          vibration: o.vibration })) {
+        console.info('[alarm] diajukan via @system.alarm (when ' + o.delayMs + 'ms)');
+        return true;
+      }
+    } catch (e) {
+      _lastError = 'exception-B';
+      console.warn('[alarm] jalur B exception: ' + e);
+    }
+  }
+
+  // ---- VARIAN A: hmAlarm resmi ({hour, minute, repeat:1, days:[]}) --------
   if (resmiTersedia() || _modul) {
     try {
       if (setAlarmHarian({ hour: o.hour, minute: o.minute, label: o.label,
@@ -173,17 +217,6 @@ export function panggilSetAlarm(o) {
     } catch (e) {
       _lastError = 'exception-A';
       console.warn('[alarm] jalur A exception: ' + e);
-    }
-  }
-
-  // ---- VARIAN B: @system.alarm dengan penundaan ms -----------------------
-  if (legacyTersedia()) {
-    try {
-      if (setAlarmTunda({ delayMs: o.delayMs, label: o.label,
-                          vibration: o.vibration })) return true;
-    } catch (e) {
-      _lastError = 'exception-B';
-      console.warn('[alarm] jalur B exception: ' + e);
     }
   }
 

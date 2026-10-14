@@ -14,25 +14,27 @@
  * ============================================================================
  */
 
-import HmAlarmDefault from '@ohos.hmAlarm'; // AKTIF (JALUR 3) — komentar baris ini bila build DevEco menolak modul
+// PERBAIKAN KRITIS "alarm tidak pernah bunyi":
+//   1) Import statis '@ohos.hmAlarm' DIHAPUS. Pada banyak firmware liteWearable
+//      modul itu TIDAK ada dalam registry paket JS → loader gagal memuat file
+//      ini SEBELUM kode sempat jalan, dan karena device-api.js meng-import-nya,
+//      RANTAI MODUL ALARM MATI TOTAL → hmAlarm global sekalipun tak pernah
+//      dipakai. Deteksi kini lewat jalur runtime aman saja (globalThis,
+//      requireNapi, '@system.alarm') — semuanya try/catch, tak bisa mematikan
+//      rantai modul.
+//   2) Bila SDK Anda MEMANG menyediakan paket '@ohos.hmAlarm', cukup
+//      UNCOMMENT dua baris di blok opsional di bawah untuk mengaktifkan
+//      JALUR 3 (statis).
 import { daftarkanModulStatis } from './alarm-resmi.js';
 
-// Beberapa SDK mengekspor konstruktor (dipakai `new`), sebagian lain langsung
-// mengekspor objek berisi setAlarm/cancel. Keduanya dicoba didaftarkan.
-try {
-  var mod = HmAlarmDefault || null;
-  if (!mod && typeof HmAlarmDefault === 'function') {
-    try { mod = new HmAlarmDefault(); } catch (eBuat) { mod = null; }
-  }
-  if (mod) {
-    daftarkanModulStatis(mod);
-    // JEMBATAN GLOBAL: alarm.js (JALUR 3 deteksi) juga membaca nilai ini.
-    var _g = (typeof globalThis !== 'undefined') ? globalThis
-           : ((typeof global !== 'undefined') ? global : null);
-    if (_g) _g.__hmAlarmMod = mod;
-  }
-} catch (e) {
-  console.warn('[hm-alarm] registrasi statis dicegat: ' + e);
-}
+/* ---- BLOK OPSIONAL JALUR 3 ( uncomment bila paket @ohos.hmAlarm tersedia
+di SDK Anda dan build lolos ) ----------------------------------------------
+import HmAlarmDefault from '@ohos.hmAlarm';
+try { daftarkanModulStatis(HmAlarmDefault); } catch (e) { /* noop */ }
+-------------------------------------------------------------------------- */
 
-export var HmAlarm = (typeof HmAlarmDefault !== 'undefined') ? HmAlarmDefault : null;
+// Catatan: tanpa import statis, tidak ada objek yang perlu didaftarkan di
+// sini. Registrasi modul terjadi lewat deteksi runtime (common/alarm.js):
+// globalThis.hmAlarm → requireNapi('hmAlarm') → '@system.alarm'.
+// File ini tetap dipelihara sebagai titik masuk JALUR 3 opsional (blok
+// comment di atas) agar dokumentasi cara mengaktifkannya mudah ditemukan.

@@ -109,14 +109,15 @@ export default {
       var daftar = [];
       for (var i = 0; i < st.daftar.length; i++) {
         var it = st.daftar[i];
-        var w = warnaStatus(it.status, st.berikutnya, it);
+        var k = kelasStatus(it.status, st.berikutnya, it); // 'mendatang' dll.
         daftar.push({
           id: i,                     // tid utk for-loop
           nama: it.nama,
           waktu: it.waktu || '--:--', // JAM SELALU DITAMPILKAN di tiap kotak
           status: it.status,
-          bg: w.bg,                    // background-color kartu (binding atribut)
-          warna: w.warna               // warna jam (binding atribut)
+          kelas: 'sel-' + k,           // kelas latar kartu (satu token statis+var)
+          kelasNama: 't-nama-' + k,    // kelas warna teks nama
+          kelasJam: 't-jam-' + k       // kelas warna teks jam
         });
       }
       this.jadwal = daftar;
@@ -140,17 +141,18 @@ function aman(fn) {
   };
 }
 
-/** Palet warna per-status utk kotak grid (dipilih JavaScript → $item.bg /
-    $item.warna). Warna dibawa lewat ATRIBUT tag tunggal di HML (binding
-    atribut didukung runtime), BUKAN lewat binding class (ditolak compiler).
-    Semua varian kontras penuh: nama & JAM selalu mudah dibaca; hanya
-    tingkat kecerahan latar yang membedakan status. */
-function warnaStatus(status, berikutnya, it) {
-  if (status === 'lewat')        return { bg: '#2A2F38', warna: '#9AA4B2' }; // lewat → abu redup
-  if (status === 'berlangsung')  return { bg: '#103524', warna: '#7CF5B8' }; // masa H-10 mnt → hijau
+/** Nama status per-kotak grid → dipakai JavaScript untuk MEMILIH KELAS CSS
+    (satu token variabel sederhana pada atribut class — pola binding resmi
+    liteWearable; ekspresi kompleks pada class yang ditolak compiler sudah
+    tidak dipakai lagi). Kelas menentukan latar kartu + warna teks:
+      mendatang   → biru tenang        berikutnya → biru terang
+      berlangsung → hijau (masa H-10)  lewat      → abu redup (tetap terbaca) */
+function kelasStatus(status, berikutnya, it) {
+  if (status === 'lewat')       return 'lewat';
+  if (status === 'berlangsung') return 'berlangsung';
   if (berikutnya && !berikutnya.besok && berikutnya.nama === it.nama)
-                                 return { bg: '#1D3A5F', warna: '#FFFFFF' }; // berikutnya → biru terang
-  return { bg: '#152A45', warna: '#EAF2FF' };                                 // mendatang → biru
+    return 'berikutnya';
+  return 'mendatang';
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */
