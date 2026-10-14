@@ -102,22 +102,24 @@ export default {
         this.sisaWaktu = 'Jadwal hari ini selesai';
       }
 
-      // GRID 5 waktu sholat + penanda status via WARNA LATAR saja.
-      // Warna per-status disiapkan di SINI sebagai $item.bg / $item.warna
-      // lalu di-binding ke ATRIBUT tag tunggal di HML. Tidak ada binding
-      // ekspresi pada atribut class (ditolak LegacyCompileLiteJS).
+      // GRID 5 waktu sholat + penanda status via WARNA LATAR & TEKS.
+      // Nilai warna disiapkan di SINI ($item.bg / $item.warnaNama /
+      // $item.warna) lalu di-binding ke ATRIBUT tag tunggal di HML.
+      // TIDAK ADA binding pada atribut class dalam bentuk apa pun —
+      // LegacyCompileLiteJS menolaknya secara mutlak.
       var daftar = [];
       for (var i = 0; i < st.daftar.length; i++) {
         var it = st.daftar[i];
         var k = kelasStatus(it.status, st.berikutnya, it); // 'mendatang' dll.
+        var c = warnaStatus(k);
         daftar.push({
           id: i,                     // tid utk for-loop
           nama: it.nama,
           waktu: it.waktu || '--:--', // JAM SELALU DITAMPILKAN di tiap kotak
           status: it.status,
-          kelas: 'sel-' + k,           // kelas latar kartu (satu token statis+var)
-          kelasNama: 't-nama-' + k,    // kelas warna teks nama
-          kelasJam: 't-jam-' + k       // kelas warna teks jam
+          bg: c.bg,                  // background-color kartu (string hex)
+          warnaNama: c.nama,         // color teks nama sholat
+          warna: c.jam               // color teks jam
         });
       }
       this.jadwal = daftar;
@@ -141,18 +143,28 @@ function aman(fn) {
   };
 }
 
-/** Nama status per-kotak grid → dipakai JavaScript untuk MEMILIH KELAS CSS
-    (satu token variabel sederhana pada atribut class — pola binding resmi
-    liteWearable; ekspresi kompleks pada class yang ditolak compiler sudah
-    tidak dipakai lagi). Kelas menentukan latar kartu + warna teks:
-      mendatang   → biru tenang        berikutnya → biru terang
-      berlangsung → hijau (masa H-10)  lewat      → abu redup (tetap terbaca) */
+/** Nama status per-kotak grid → kunci pemilihan WARNA (lihat warnaStatus).
+    mendatang   → biru tenang        berikutnya → biru terang
+    berlangsung → hijau (masa H-10)  lewat      → abu redup (tetap terbaca) */
 function kelasStatus(status, berikutnya, it) {
   if (status === 'lewat')       return 'lewat';
   if (status === 'berlangsung') return 'berlangsung';
   if (berikutnya && !berikutnya.besok && berikutnya.nama === it.nama)
     return 'berikutnya';
   return 'mendatang';
+}
+
+/** Palet per-status — DIPAKAI SEBAGAI NILAI BINDING atribut tag tunggal
+    (background-color / color) di index.hml. Sengaja berupa string hex biasa
+    karena compiler LiteWearable melarang binding pada atribut class.
+      bg        : latar kartu
+      nama      : warna teks nama sholat
+      jam       : warna teks jam masuk */
+function warnaStatus(k) {
+  if (k === 'berlangsung') return { bg: '#103524', nama: '#d6ffe9', jam: '#7cf5b8' };
+  if (k === 'berikutnya')  return { bg: '#1d3a5f', nama: '#ffffff', jam: '#ffffff' };
+  if (k === 'lewat')       return { bg: '#23282f', nama: '#9aa4b2', jam: '#9aa4b2' };
+  return { bg: '#152a45', nama: '#eaf1f8', jam: '#ffffff' }; // mendatang
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */

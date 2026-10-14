@@ -129,35 +129,12 @@
   color: #ffffff;
 }
 
-/* ---------- KELAS STATUS PER-KOTAK (dipilih JavaScript: $item.kelas) ------
-   Compiler LegacyCompileLiteJS mengizinkan binding SATU token variabel
-   sederhana di atribut class (ini pola resmi dokumentasi lite); yang
-   DILARANG adalah ekspresi kompleks. Warna per-status lewat kelas CSS
-   → tidak ada atribut kustom background-color/color pada tag (bebas
-   warning 'use customize attr'). Kontras dijaga: teks jam tetap terang. */
-.sel-mendatang {
-  background-color: #152a45;        /* biru tenang — waktu masih mendatang */
-}
-.sel-berikutnya {
-  background-color: #1d3a5f;        /* biru terang — sholat berikutnya */
-}
-.sel-berlangsung {
-  background-color: #103524;        /* hijau — masa H-10 menit */
-}
-.sel-lewat {
-  background-color: #23282f;        /* abu redup — sudah lewat */
-}
-
-/* ===========================================================================
-   Kelas WARNA TEKS per-status (juga dipilih JS via $item.kelasNama /
-   $item.kelasJam) — LITE CSS tidak mendukung selector turunan
-   (mis. '.sel-lewat .sel-jam'), jadi tiap <text> pakai kelasnya sendiri. */
-.t-nama-mendatang { color: #eaf1f8; }
-.t-nama-berikutnya { color: #ffffff; }
-.t-nama-berlangsung { color: #d6ffe9; }
-.t-nama-lewat { color: #9aa4b2; }    /* redup tapi tetap terbaca */
-.t-jam-mendatang { color: #ffffff; }
-.t-jam-berikutnya { color: #ffffff; }
-.t-jam-berlangsung { color: #7cf5b8; }
-.t-jam-lewat { color: #9aa4b2; }
+/* ---------- CATATAN WARNA PER-STATUS ------------------------------------
+   Compiler LegacyCompileLiteJS MELARANG data binding pada atribut class
+   dalam bentuk apa pun (percobaan 'class="sel {{ $item.kelas }}"' → ERROR
+   build). Solusi final: warna per-status dibawa lewat ATRIBUT tag tunggal
+   dengan binding (background-color / color) yang nilainya disiapkan
+   JavaScript (fungsi warnaStatus di index.js). Kelas CSS di bawah hanya
+   menjadi nilai DEFAULT/latar dasar; atribut binding akan menimpanya saat
+   render. Tidak ada atribut kustom lines/text-overflow. */
 
