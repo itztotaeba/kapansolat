@@ -24,7 +24,10 @@
 
 import { MENIT_SEBELUM } from './jadwal-sholat.js';
 import { tanggalKey, kejadianPengingat, formatSelang } from './waktu.js';
-import { getar, tampilkanNotifikasi, pasangDeretAlarm, alarmTersedia, jumlahAlarmTerpasang } from './device-api.js';
+import {
+  getar, tampilkanNotifikasi, pasangDeretAlarm,
+  alarmTersedia, jumlahAlarmTerpasang, jalurAlarmLabel
+} from './device-api.js';
 
 var INTERVAL_MS = 30 * 1000; // cek tiap 30 detik — cukup & hemat daya
 
@@ -133,6 +136,28 @@ export function aktifkanSemuaMetode() {
  */
 export function statusAlarmSistem() {
   return { tersedia: alarmTersedia(), dipasang: jumlahAlarmTerpasang() };
+}
+
+/**
+ * TEKS KARTU STATUS PENGINGAT (satu string utuh, aman untuk binding lite).
+ * Tidak pernah menampilkan pesan "tak tersedia" yang menakutkan — bila modul
+ * hmAlarm belum terdeteksi, sistem terus mencoba otomatis tiap siklus 30 dtk.
+ */
+export function teksStatusPengingat() {
+  try {
+    var n = jumlahAlarmTerpasang();
+    if (alarmTersedia() && n > 0) {
+      return '⚙ Alarm sistem aktif: ' + n + '× H-' + MENIT_SEBELUM + ' mnt (' + jalurAlarmLabel() + ')';
+    }
+    if (alarmTersedia()) {
+      return '⚙ Alarm sistem siap · pasang ulang ' + MENIT_SEBELUM + ' mnt otomatis';
+    }
+    // Bukan pesan error: metode A tetap jalan penuh dan pencarian modul
+    // alarm (hmAlarm, 4 jalur) dicoba ulang otomatis tiap siklus 30 detik.
+    return '⚙ Pengingat H-' + MENIT_SEBELUM + ' mnt aktif · alarm sistem sedang disiapkan otomatis';
+  } catch (e) {
+    return '⚙ Pengingat berjalan';
+  }
 }
 
 /** Util: teks "x menit/y jam lagi" utk debug/log. */

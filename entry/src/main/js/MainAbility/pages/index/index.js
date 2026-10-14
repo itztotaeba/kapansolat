@@ -16,7 +16,8 @@
  */
 
 import { statusHariIni, formatTanggalID } from '../../common/waktu.js';
-import { aktifkanSemuaMetode, hentikanPemantauan } from '../../common/pengingat.js';
+import { aktifkanSemuaMetode, hentikanPemantauan, teksStatusPengingat } from '../../common/pengingat.js';
+import { daftarkanKonteksAlarm } from '../../common/device-api.js';
 
 export default {
   data: {
@@ -27,13 +28,17 @@ export default {
     pesanNext: '',   // satu string utuh 'Menuju Ashar' (hindari binding dua token)
     waktuBerikutnya: '',
     sisaWaktu: '',
-    jadwal: [] // [{nama,waktu,status,penanda,bg,rim,dome,warnaTeks,warnaPenanda}]
+    jadwal: [], // [{nama,waktu,status,penanda,bg,rim,dome,warnaTeks,warnaPenanda}]
+    statusPengingat: '', // teks kartu Metode B (satu string utuh)
+    warnaAlarm: '#7fdca4'
   },
 
   onInit() {
     // Proteksi total: exception saat memuat halaman TIDAK boleh lolos ke
     // runtime liteWearable (gejala bila lolos: layar blank hitam).
     try {
+      // beri detektor hmAlarm akses this.requireNapi (JALUR 3)
+      daftarkanKonteksAlarm(this);
       this.refresh();
     } catch (e) {
       console.warn('[index] onInit dicegat: ' + e);
@@ -42,6 +47,7 @@ export default {
 
   onShow() {
     try {
+      daftarkanKonteksAlarm(this);
       // Nyalakan kedua metode pengingat saat halaman tampil
       aktifkanSemuaMetode();
       this.refresh();
@@ -103,14 +109,22 @@ export default {
       }
       this.jadwal = daftar;
 
-      // Catatan: status Metode B TIDAK ditampilkan di layar (menghemat ruang;
-      // pesan 'modul alarm tak tersedia' membingungkan pengguna). Pemasangan
-      // alarm tetap berjalan otomatis dan tercatat di console log jam.
+      // Kartu status Metode B: SATU string utuh + warna, selalu terisi
+      // (tidak pernah lagi menampilkan pesan 'modul alarm tak tersedia').
+      try {
+        this.statusPengingat = teksStatusPengingat();
+        this.warnaAlarm = '#7fdca4';
+      } catch (e) {
+        this.statusPengingat = '⚙ Pengingat berjalan';
+        this.warnaAlarm = '#9fb0c3';
+      }
     } else {
       this.jadwal = [];
       this.pesanNext = '';
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
+      try { this.statusPengingat = teksStatusPengingat(); } catch (e) { this.statusPengingat = '⚙ Pengingat berjalan'; }
+      this.warnaAlarm = '#9fb0c3';
     }
   }
 };

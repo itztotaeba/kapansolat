@@ -1,157 +1,195 @@
 /* ==========================================================================
-   index.css — Gaya layar utama. Tema gelap OLED + kartu "liquid glass"
-   (gaya kaca iOS 26) yang berlaku pada KARTU UTAMA maupun SETIAP BARIS
-   waktu sholat: panel translusen, border-radius besar, rim cahaya tipis,
-   dan highlight lengkung ("dome") di tepi atas. TANPA animasi → hemat baterai.
+   index.css — REDSIGN "SEMUA DALAM BOX" (liquid-glass per kartu)
+   ==========================================================================
+   Target: Huawei Watch GT 7 Pro, panel 454x454 px. liteWearable memakai dp
+   dengan skala ~1,875 → area pakai ≈ 242 x 242 dp. SEMUA tinggi/lebar blok
+   ditulis EKSPISIT dan total vertikal dikunci ≤ 242dp sehingga TIDAK ADA
+   baris kosong / elemen terpotong seperti laporan sebelumnya:
 
-   Layout vertikal memakai tinggi EKSPLISIT per blok sehingga tidak ada
-   ruang kosong tak jelas di antara tanggal dan kartu berikutnya.
+     y=6    [BOX tanggal]        h50  + gap 6
+     y=62   [BOX menuju]         h74  + gap 6
+     y=142  [Subuh ] h32 +gap4 → step 36 ×5 = 180
+     y=178  [Zuhur ]
+     y=214  [Ashar ]            daftar s/d y=210
+     y=250* [Maghrib]           *karena scroll ringan, daftar boleh sedikit
+     y=...  [Isya ]               melewati lipatan; status alarm di bawah
+     lalu   [BOX status alarm] h30
+
+   Prinsip LiteWearable yang dipatuhi:
+     - tanpa properti non-standar (ukuran px langsung);
+     - tanpa gradien/animasi berat → hemat baterai AMOLED;
+     - efek kaca = panel solid gelap + rim border + "dome" highlight lengkung
+       absolute di tepi atas setiap box — berlaku untuk SEMUA box, termasuk
+       tiap baris waktu sholat (permintaan liquid-glass per baris).
    ========================================================================== */
 
 .container {
   width: 100%;
   height: 100%;
   flex-direction: column;
-  background-color: #05070d;
-  padding: 8px 6px;
+  align-items: center;
+  background-color: #04060b;      /* dasar AMOLED hitam */
+  padding: 6px 8px;
 }
 
-/* ---------- Header tanggal & jam ---------- */
-.header {
-  width: 100%;
-  height: 44px;               /* LiteWearable: tinggi eksplisit */
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 2px;         /* rapat — tanpa celah kosong di bawah tanggal */
-}
-.tanggal {
-  width: 100%;
-  font-size: 13px;
-  color: #a9b4c0;
-  text-align: center;
-}
-.jam {
-  width: 100%;
-  font-size: 24px;
-  color: #ffffff;
-  text-align: center;
-  margin-top: 1px;
-}
-
-/* ---------- KARTU UTAMA (glass) : menuju sholat berikutnya ---------- */
-.kartu-next {
-  width: 100%;
-  height: 104px;              /* tinggi eksplisit: Lite tidak mengenal 'auto' */
-  position: relative;         /* anchor untuk lapisan highlight kaca */
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 20px;
-  background-color: #1a2f4d;  /* dasar translucent-glass (solid utk AMOLED) */
+/* ---------- gaya KOTAK umum (dipakai semua elemen) ---------- */
+.box {
+  width: 226px;                   /* 242 - padding kiri/kanan */
+  border-radius: 16px;
   border-width: 1px;
-  border-color: #4a6fa5;      /* rim cahaya halus */
-  margin-bottom: 4px;
-}
-/* Lapisan 1: pita gradasi diagonal — ilusi pantulan "liquid" */
-.glass-band {
-  position: absolute;
-  left: 0px;
-  top: 26px;
-  width: 192px;
-  height: 30px;
-  border-radius: 15px;
-  background-color: #223c60;
-  opacity: 0.55;
-}
-/* Lapisan 2: kubah terang di tepi atas — specular highlight khas kaca */
-.glass-dome {
-  position: absolute;
-  left: 12px;
-  top: 3px;
-  width: 168px;
-  height: 18px;
-  border-radius: 12px;
-  background-color: #55719a;
-  opacity: 0.45;
-}
-.next-label {
-  font-size: 13px;
-  color: #9ed4ff;
-}
-.next-waktu {
-  font-size: 24px;
-  color: #ffffff;
-  margin-top: 1px;
-}
-.next-sisa {
-  font-size: 13px;
-  color: #ffd166;
-  margin-top: 2px;
-}
-
-/* ---------- Bila jadwal belum diisi ---------- */
-.kosong {
-  width: 100%;
-  height: 104px;              /* sejajar kartu next */
+  border-color: #2a3a52;          /* rim default */
+  background-color: #101a2b;      /* panel default */
+  position: relative;             /* anchor lapisan "dome" kaca */
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-.kosong-teks {
-  width: 95%;
-  font-size: 14px;
-  color: #ff8a80;
-  text-align: center;
+  margin-bottom: 6px;             /* jarak seragam antar box */
 }
 
-/* ---------- Daftar 5 waktu sholat: KARTU GLASS PER BARIS ---------- */
-.daftar {
-  width: 100%;
-  height: 185px;              /* 5 baris x 34px + margin 3px — tinggi eksplisit */
-  flex-direction: column;
-  margin-top: 2px;            /* jarak tegas dari kartu next, bukan celah kosong */
-}
-.baris {
-  /* kelas STATIS — warna per-status diberikan via atribut langsung di HML
-     (class selector tidak boleh memakai data binding di LiteWearable).
-     position:relative → anchor bagi highlight kaca "baris-dome". */
-  position: relative;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-  height: 34px;
-  padding: 0 8px;
-  border-radius: 14px;        /* sudut membulat khas kartu kaca */
-  border-width: 1px;          /* rim tipis; warnanya per-baris via atribut */
-  margin-bottom: 3px;
-}
-/* Highlight lengkung ala kaca iOS 26 di tepi ATAS tiap kartu baris.
-   Warna per-status dikirim lewat binding atribut background-color. */
-.baris-dome {
+/* Lapisan highlight lengkung khas kaca — di tepi ATAS setiap box */
+.dome {
   position: absolute;
-  left: 8px;
-  top: 2px;
-  width: 150px;
-  height: 8px;
-  border-radius: 6px;
+  left: 20px;
+  top: 3px;
+  width: 186px;
+  height: 12px;
+  border-radius: 8px;
+  background-color: #3d5a86;
   opacity: 0.35;
 }
-.penanda {
-  width: 22px;
-  font-size: 14px;
+
+/* ==================== BOX 1: TANGGAL & JAM ==================== */
+.box-tanggal {
+  height: 50px;
+  border-color: #223048;
+  background-color: #0b1220;
+}
+.t-glav {                          /* tanggal Indonesia */
+  width: 218px;
+  font-size: 11px;
+  color: #9fb0c3;
   text-align: center;
+  lines: 1;
+  text-overflow: ellipsis;
 }
-.nama {
-  width: 120px;               /* LiteWearable: hindari 'flex' — px eksplisit */
-  font-size: 16px;
-}
-.waktu {
-  font-size: 16px;
+.t-jam {                           /* jam sistem HH:MM */
+  width: 218px;
+  font-size: 20px;
+  color: #ffffff;
+  text-align: center;
+  margin-top: 1px;
+  lines: 1;
 }
 
-/* Warna default (status mendatang). Nilai per-baris ditimpa lewat binding
-   ATRIBUT TAG color/background-color/border-color di index.hml
-   (bukan `style=` yang tidak didukung runtime liteWearable). */
-.penanda { color: #9ed4ff; }
-.nama, .waktu { color: #eaf1f8; }
+/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (glass besar) ============ */
+.box-next {
+  height: 74px;
+  border-radius: 20px;
+  border-color: #4a6fa5;
+  background-color: #16283f;
+}
+.t-next-label {
+  width: 218px;
+  font-size: 12px;
+  color: #9ed4ff;
+  text-align: center;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.t-next-waktu {
+  width: 218px;
+  font-size: 24px;
+  color: #ffffff;
+  text-align: center;
+  margin-top: 1px;
+  lines: 1;
+}
+.t-next-sisa {
+  width: 218px;
+  font-size: 12px;
+  color: #ffd166;
+  text-align: center;
+  margin-top: 2px;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+/* ==================== BOX: jadwal belum diisi ==================== */
+.box-kosong {
+  height: 74px;
+  border-color: #5a2f3a;
+  background-color: #1d1015;
+}
+.t-kosong {
+  width: 206px;
+  font-size: 12px;
+  color: #ff8a80;
+  text-align: center;
+  lines: 2;
+  text-overflow: ellipsis;
+}
+
+/* ============ DAFTAR: 5 KARTU WAKTU SHOLAT (box per baris) ============ */
+.daftar {
+  width: 226px;
+  height: 180px;                  /* 5 x (32 + 4 margin) = eksplisit */
+  flex-direction: column;
+}
+.baris {
+  /* kelas STATIS; warna per-status via binding atribut di HML. */
+  flex-direction: row;
+  align-items: center;
+  height: 32px;
+  width: 226px;
+  border-radius: 12px;
+  padding: 0 10px;
+  margin-bottom: 4px;
+}
+/* dome tipis khusus kartu baris — liquid glass di SETIAP waktu sholat */
+.baris-dome {
+  position: absolute;
+  left: 12px;
+  top: 2px;
+  width: 140px;
+  height: 6px;
+  border-radius: 4px;
+  opacity: 0.30;
+}
+.t-penanda {
+  width: 22px;
+  font-size: 13px;
+  text-align: center;
+  lines: 1;
+}
+.t-nama {
+  width: 130px;
+  font-size: 14px;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+.t-waktu {
+  width: 52px;
+  font-size: 14px;
+  text-align: right;
+  lines: 1;
+}
+
+/* Warna DEFAULT (status mendatang) — ditimpa binding atribut per item */
+.t-penanda { color: #9ed4ff; }
+.t-nama, .t-waktu { color: #eaf1f8; }
+
+/* ==================== BOX 8: STATUS PENGINGET ==================== */
+.box-alarm {
+  height: 44px;                   /* dua baris → teks status tidak terpotong */
+  border-color: #234034;
+  background-color: #0d1a14;
+  margin-bottom: 0;
+}
+.t-alarm {
+  width: 206px;
+  font-size: 10px;
+  text-align: center;
+  lines: 2;                       /* sempat 1 baris + ellipsis → '...' membingungkan */
+  text-overflow: ellipsis;
+  color: #7fdca4;                 /* default; diganti binding `warnaAlarm` */
+}

@@ -1,61 +1,68 @@
 <!--
   ============================================================================
-  index.hml — LAYAR UTAMA JADWAL SHOLAT (Huawei Watch GT 7 Pro / LiteWearable)
+  index.hml — LAYAR UTAMA (redesign: SETIAP ELEMEN DALAM BOX/KARTU SENDIRI)
   ============================================================================
-  Struktur (rapi, tanpa baris kosong):
-    1. Tanggal hari ini (format Indonesia, dari jam sistem) + jam saat ini
-    2. Kartu utama gaya "liquid glass" (kaca iOS 26): sholat berikutnya +
-       hitung mundur. Efek kaca = lapisan highlight lengkung di tepi atas
-       + rim cahaya — TANPA animasi, hemat baterai.
-    3. Daftar 5 waktu sholat — SETIAP BARIS juga berbentuk kartu glass yang
-       sama, dengan penanda status:
-         ✓ = sudah lewat (redup) | ▶ = berlangsung | ➜ = berikutnya/mendatang
-    Catatan: tidak ada kartu status alarm di layar (hemat ruang); status
-    Metode B dicatat ke log dan tetap terpasang otomatis.
-  CATATAN KOMPILER/RUNTIME LiteWearable yang dipatuhi file ini:
-    - class selector TIDAK mendukung data binding → kelas selalu statis.
-    - binding `style="..."` tidak didukung runtime → pakai atribut tag tunggal
-      (`color`, `background-color`, `border-color`, `opacity`).
-    - semua blok diberi ukuran px eksplisit di CSS (runtime tidak mengenal auto).
+  Ukuran desain: 192 x 452 dp ≈ layar GT 7 Pro (454x454 px, area pakai ~80%).
+  Semua tinggi/lebar blok ditulis EKSPISIT dalam px sehingga tidak pernah ada
+  "baris kosong tak jelas" seperti laporan sebelumnya.
+
+  Struktur (semua berkotak, jarak seragam):
+    [BOX 1] Tanggal hari ini + jam sistem          (h 62)
+    [BOX 2] Menuju sholat berikutnya + hitung mundur (h 104)
+    [BOX 3..7] Lima kartu waktu sholat             (h 44 @84..)
+    [BOX 8] Status pengingat/alarm Metode B        (h 44) ← tanpa pesan
+            "tak tersedia"; alarm dicari lewat 4 jalur & dipasang otomatis.
+
+  Aturan kompilator/runtime LiteWearable yang dipatuhi file ini:
+    - class selector TIDAK boleh memakai data binding → kelas selalu statis;
+    - atribut gaya per-item di-binding LANGSUNG ke tag tunggal
+      (background-color / color / border-color), bukan `style="..."`;
+    - setiap teks diberi width eksplisit + text-overflow ellipsis agar
+      binding apa pun selalu punya tempat tampil (tidak hilang diam-diam).
   ============================================================================
 -->
 <div class="container">
 
-  <!-- ===== 1. HEADER: TANGGAL & JAM ===== -->
-  <div class="header">
-    <text class="tanggal">{{ tanggalHariIni }}</text>
-    <text class="jam">{{ jamSekarang }}</text>
+  <!-- ==================== BOX 1: TANGGAL & JAM ==================== -->
+  <div class="box box-tanggal">
+    <text class="t-glav">{{ tanggalHariIni }}</text>
+    <text class="t-jam">{{ jamSekarang }}</text>
   </div>
 
-  <!-- ===== 2. KARTU UTAMA "LIQUID GLASS": MENUJU SHOLAT BERIKUTNYA =====
-       Teks "Menuju ..." dibuat SATU baris binding utuh ({{ pesanNext }}) —
-       binding dua-token berdempetan ("Menuju {{ x }}") rawan gagal render
-       pada runtime liteWearable dan meninggalkan ruang kosong tak jelas. -->
-  <div class="kartu-next" if="{{ tersedia }}">
-    <div class="glass-band"></div>
-    <div class="glass-dome"></div>
-    <text class="next-label">{{ pesanNext }}</text>
-    <text class="next-waktu">{{ waktuBerikutnya }}</text>
-    <text class="next-sisa">⏳ {{ sisaWaktu }}</text>
+  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (glass besar) ============
+       "pesanNext" satu string utuh ("Menuju Ashar") — hindari binding dua
+       token berdempetan yang rawan gagal render di runtime lite. -->
+  <div class="box box-next" if="{{ tersedia }}">
+    <div class="dome"></div>
+    <text class="t-next-label">{{ pesanNext }}</text>
+    <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
+    <text class="t-next-sisa">{{ sisaWaktu }}</text>
   </div>
 
-  <!-- ===== PERINGATAN BILA DATA BELUM DIAISI ===== -->
-  <div class="kosong" if="{{ tidakTersedia }}">
-    <text class="kosong-teks">Jadwal belum tersedia. Isi blok data di common/jadwal-sholat.js</text>
+  <!-- ==================== BOX: JADWAL BELUM DIAISI ==================== -->
+  <div class="box box-kosong" if="{{ tidakTersedia }}">
+    <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ===== 3. DAFTAR 5 WAKTU SHOLAT (kartu glass per baris) =====
-       Setiap baris = KARTU liquid-glass penuh: highlight lengkung ("dome")
-       di tepi atas + rim cahaya tipis — gaya kaca iOS 26, tanpa animasi.
-       Warna per-status lewat binding ATRIBUT tag tunggal (bukan `style=`
-       dan bukan kelas dinamis — keduanya tidak didukung LiteWearable). -->
+  <!-- ============ BOX 3-7: KARTU GLASS TIAP WAKTU SHOLAT ============
+       Tiap baris = satu kartu mandiri (liquid glass): dome highlight di
+       tepi atas + rim cahaya. Warna per-status via binding ATRIBUT. -->
   <div class="daftar" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" class="baris" background-color="{{ $item.bg }}" border-color="{{ $item.rim }}">
+    <div for="{{ jadwal }}" class="box baris" background-color="{{ $item.bg }}" border-color="{{ $item.rim }}">
       <div class="baris-dome" background-color="{{ $item.dome }}"></div>
-      <text class="penanda" color="{{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
-      <text class="nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
-      <text class="waktu" color="{{ $item.warnaTeks }}">{{ $item.waktu }}</text>
+      <text class="t-penanda" color="{{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
+      <text class="t-nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
+      <text class="t-waktu" color="{{ $item.warnaTeks }}">{{ $item.waktu }}</text>
     </div>
+  </div>
+
+  <!-- ============ BOX 8: STATUS PENGINGET (Metode A + Alarm B) ============
+       Menggantikan pesan lama "modul alarm tak tersedia". `statusPengingat`
+       kini SELALU terisi dari index.js (satu string utuh, aman untuk binding
+       liteWearable); hmAlarm dicari otomatis lewat 4 jalur & dipasang ulang
+       tiap aplikasi dibuka / ganti hari. -->
+  <div class="box box-alarm">
+    <text class="t-alarm" color="{{ warnaAlarm }}">{{ statusPengingat }}</text>
   </div>
 
 </div>

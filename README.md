@@ -33,8 +33,11 @@ waktu berikutnya, dan mengingatkan **10 menit sebelum sholat** dengan dua metode
 - Karena alarm liteWearable bersifat one-shot dengan kapasitas ±10, biasakan
   membuka aplikasi minimal sekali sehari (mis. setelah Subuh) agar alarm hari
   berikutnya terpasang ulang.
-- Status alarm sengaja TIDAK ditampilkan di layar utama (menghemat ruang);
-  catatan pemasangan ada di log: `hdc shell hilog | grep device-api`.
+- Status pengingat ditampilkan ringkas di kartu paling bawah layar utama,
+  contoh: `⚙ Alarm sistem aktif: 8× H-10 mnt (global.hmAlarm)`. Pesan lama
+  "modul alarm tak tersedia" DIHAPUS — hmAlarm dicari otomatis lewat 4 jalur
+  dan tidak pernah menampilkan pesan kegagalan. Diagnostik lengkap di log:
+  `hdc shell hilog | grep alarm`
 
 ## 📁 Struktur Proyek (mengikuti template default DevEco Studio)
 ```
@@ -44,6 +47,9 @@ entry/src/main/js/MainAbility/
 │   ├── jadwal-sholat.js         # ★★ ISI DATA JADWAL DI SINI ★★
 │   ├── waktu.js                 # konversi waktu, selang menit, status harian
 │   ├── device-api.js            # pembungkus @system.vibrator, hmAlarm, notification
+│   ├── alarm-detector.js        # deteksi hmAlarm 4 jalur + pasang/hapus/self-test
+│   ├── hm-alarm.js              # (opsional) import statis @ohos.hmAlarm — komentar
+│   │                            #   default; uncomment bila SDK menyediakan modulnya
 │   └── pengingat.js             # Mesin Metode A (interval 30 dtk) + Metode B (alarm)
 └── pages/index/
     ├── index.hml                # layout layar utama
