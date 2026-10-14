@@ -35,6 +35,8 @@ export function daftarkanKonteksAlarm(ctx) {
   try { deteksiModulAlarm(ctx); } catch (e) { /* aman */ }
 }
 
+function pad2j(n) { return (n < 10 ? '0' + n : '' + n); }
+
 /* ------------------------------ GETARAN ---------------------------------- */
 export function getar() {
   try {
@@ -87,6 +89,8 @@ export function pasangAlarmKejadian(ev) {
   if (!modulAlarmTersedia()) return false;
   if (!ev || typeof ev.triggerJam !== 'number' || typeof ev.triggerMenitLokal !== 'number') return false;
   var selang = (typeof ev.selangMenit === 'number' && ev.selangMenit >= 0) ? ev.selangMenit : 0;
+  console.info('[device-api] mengajukan alarm → ' + pad2j(ev.triggerJam) + ':' + pad2j(ev.triggerMenitLokal) +
+               ' harian | ' + ev.nama + ' masuk ' + ev.masuk + ' (H-' + (ev.menitSebelum || 10) + ' mnt)');
   return panggilSetAlarm({
     hour: ev.triggerJam,
     minute: ev.triggerMenitLokal,
@@ -106,7 +110,8 @@ export function jalurAlarmLabel() {
   try { return jalurAlarmAktif(); } catch (e) { return '(belum terdeteksi)'; }
 }
 
-/** Hapus seluruh alarm milik aplikasi (dipakai sebelum pasang ulang). */
+/** Hapus seluruh alarm milik aplikasi. TIDAK dipakai lagi di alur pasang
+    rutin (lihat catatan pasangDeretAlarm); tersedia utk reset manual. */
 export function hapusSemuaAlarm() {
   try { panggilHapusAlarm(); } catch (e) {
     console.warn('[device-api] hapusSemuaAlarm gagal: ' + e);
@@ -134,7 +139,12 @@ export function jumlahAlarmTerpasang() { return _terakhirDipasang; }
  * @returns {number} jumlah alarm yang berhasil dipasang
  */
 export function pasangDeretAlarm(kejadian) {
-  hapusSemuaAlarm();
+  // PENTING (penyebab alarm "mati total"): versi lama SELALU memanggil
+  // hapusSemuaAlarm() sebelum memasang. Pada sebagian firmware liteWearable
+  // cancelAlarm() bersifat ASINKRON — pembatalan baru dieksekusi SETELAH
+  // pemasangan, sehingga alarm yang baru dibuat ikut terhapus dan tidak
+  // pernah berbunyi. Solusi: TIDAK menghapus dulu; hmAlarm menimpa slot
+  // dengan jam:menit yang sama secara idempoten.
   var MAX_ALARM = 10;
   var count = 0;
   for (var i = 0; i < kejadian.length && count < MAX_ALARM; i++) {
