@@ -102,19 +102,20 @@ export default {
         this.sisaWaktu = 'Jadwal hari ini selesai';
       }
 
-      // GRID 5 waktu sholat + penanda status via WARNA LATAR saja (kelas
-      // statis; binding ke atribut tag tunggal — aturan LiteWearable).
+      // GRID 5 waktu sholat + penanda status via WARNA LATAR saja.
+      // Kelas per-status ('mendatang'/'berikutnya'/'berlangsung'/'lewat')
+      // disiapkan di SINI sebagai string $item.kelas — runtime HML tinggal
+      // menggabungkannya dengan kelas statis 'sel'. Tidak ada binding
+      // ekspresi pada atribut class dan tidak ada atribut kustom color.
       var daftar = [];
       for (var i = 0; i < st.daftar.length; i++) {
         var it = st.daftar[i];
-        var t = temaStatus(it.status);
         daftar.push({
+          id: i,                     // tid utk for-loop
           nama: it.nama,
-          waktu: it.waktu || '--:--',   // JAM SELALU DITAMPILKAN di tiap kotak
+          waktu: it.waktu || '--:--', // JAM SELALU DITAMPILKAN di tiap kotak
           status: it.status,
-          bg: t.bg,
-          warnaTeks: t.teks,
-          warnaJam: t.jam
+          kelas: kelasStatus(it.status, st.berikutnya, it)
         });
       }
       this.jadwal = daftar;
@@ -138,21 +139,16 @@ function aman(fn) {
   };
 }
 
-/** Palet per-status utk kotak grid (binding atribut background-color/color,
-    BUKAN kelas — aturan LegacyCompileLiteJS). Semua varian kontras penuh:
-    nama & JAM selalu mudah dibaca; hanya tingkat kecerahan latar yang
-    membedakan status (tidak ada lagi garis/centang pengganggu). */
-function temaStatus(status) {
-  if (status === 'lewat') {
-    // sudah lewat → latar paling gelap, teks tetap jelas terbaca
-    return { bg: '#0c1119', teks: '#aab4c0', jam: '#c3ccd6' };
-  }
-  if (status === 'berlangsung') {
-    // masa H-10 menit menjelang masuk waktu → aksen hijau lembut
-    return { bg: '#103524', teks: '#dff7e7', jam: '#8ef0b8' };
-  }
-  // berikutnya / mendatang → biru standar
-  return { bg: '#152a45', teks: '#eaf1f8', jam: '#ffffff' };
+/** Kelas CSS per-status utk kotak grid (dipilih JavaScript → $item.kelas).
+    Warna didefinisikan di index.css (.mendatang/.berikutnya/.berlangsung/
+    .lewat). Semua varian kontras penuh: nama & JAM selalu mudah dibaca;
+    hanya tingkat kecerahan latar yang membedakan status. */
+function kelasStatus(status, berikutnya, it) {
+  if (status === 'lewat') return 'lewat';          // sudah lewat → gelap redup
+  if (status === 'berlangsung') return 'berlangsung'; // masa H-10 menit → hijau
+  // sholat terdekat berikutnya → biru terang; sisanya biru standar
+  if (berikutnya && !berikutnya.besok && berikutnya.nama === it.nama) return 'berikutnya';
+  return 'mendatang';
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */
