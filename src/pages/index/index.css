@@ -1,0 +1,113 @@
+/* index.css - gaya layar utama. Warna solid sederhana, hemat daya AMOLED. */
+
+.page {
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 6px 10px;
+  background-color: #000000;
+}
+
+/* Banner pengingat Metode A */
+.banner {
+  width: 100%;
+  border-radius: 8px;
+  background-color: #B3541E;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  justify-content: center;
+}
+.banner-text {
+  color: #FFFFFF;
+  font-size: 12px;
+  lines: 2;
+  text-align: center;
+}
+
+/* Tanggal hari ini */
+.tanggal {
+  color: #9AC4A8;
+  font-size: 13px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+/* Kartu sholat berikutnya */
+.card-next {
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  border-radius: 10px;
+  background-color: #12241A;
+  padding: 6px;
+  margin-bottom: 6px;
+}
+.next-label {
+  color: #7FD1AE;
+  font-size: 13px;
+}
+.next-time {
+  color: #FFFFFF;
+  font-size: 24px;
+}
+.next-countdown {
+  color: #FFD37F;
+  font-size: 12px;
+}
+
+/* Peringatan jadwal kosong */
+.kosong {
+  width: 100%;
+  border-radius: 8px;
+  background-color: #3A1D1D;
+  padding: 6px;
+  margin-bottom: 6px;
+}
+.kosong-text {
+  color: #FFB4B4;
+  font-size: 11px;
+}
+
+/* Baris daftar sholat */
+.row {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  height: 26px;
+  padding: 0 4px;
+}
+.row-status {
+  width: 20px;
+  color: #8A8A8A;
+  font-size: 12px;
+}
+.row-name {
+  flex-grow: 1;
+  color: #FFFFFF;
+  font-size: 14px;
+}
+.row-time {
+  color: #FFFFFF;
+  font-size: 14px;
+}
+
+/* Status: sudah lewat → redup */
+.lewat {
+  color: #5A5A5A;
+}
+/* Sedang berlangsung → hijau */
+.berlangsung {
+  color: #7FD1AE;
+}
+
+/* Tombol detail */
+.tombol {
+  width: 100%;
+  height: 30px;
+  margin-top: 6px;
+  border-radius: 8px;
+  background-color: #1C3A2A;
+  color: #CFEFE0;
+  font-size: 12px;
+}
