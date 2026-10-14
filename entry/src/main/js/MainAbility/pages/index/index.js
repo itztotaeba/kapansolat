@@ -15,14 +15,15 @@
  *   - jam pada kartu "Menuju" diperkecil & sejajar label (lihat CSS) agar
  *     tidak menutupi hitung mundur;
  *   - tiap kotak grid = NAMA + JAM sholat (tanpa penanda ✓/▶/➜, tanpa dome);
- *   - box status pengingat setelah Isya DIHAPUS; info singkat berikutnya
- *     menempati kotak ke-6 grid.
+ *   - box/kotak setelah Isya DIHAPUS (kotak ke-6 grid ikut dihapus — info
+ *     sholat berikutnya sudah ada di BOX "Menuju ...");
+ *   - seluruh konten di-pusatkan vertikal (lihat CSS .container).
  * ============================================================================
  */
 
 import { statusHariIni, formatTanggalID } from '../../common/waktu.js';
 import { aktifkanSemuaMetode, hentikanPemantauan } from '../../common/pengingat.js';
-import { daftarkanKonteksAlarm } from '../../common/device-api.js';
+import { daftarkanKonteksAlarm, getarPanjang } from '../../common/device-api.js';
 
 export default {
   data: {
@@ -33,11 +34,7 @@ export default {
     pesanNext: '',       // satu string utuh 'Menuju Ashar'
     waktuBerikutnya: '', // jam sholat berikutnya (font kecil, sejajar label)
     sisaWaktu: '',       // hitung mundur 'x jam y menit lagi'
-    jadwal: [],          // [{nama,waktu,status,bg,warnaTeks,warnaJam}]
-    infoJudul: 'Berikutnya',   // kotak ke-6 grid: ringkasan sholat berikutnya
-    infoTeks: '--:--',
-    warnaInfo: '#ffffff',
-    bgInfo: '#101a2b'
+    jadwal: []           // [{nama,waktu,status,bg,warnaTeks,warnaJam}]
   },
 
   onInit() {
@@ -61,6 +58,13 @@ export default {
       daftarkanKonteksAlarm(this);
       aktifkanSemuaMetode();
       this.refresh();
+      // UJI GETAR ±8 detik setelah dibuka → bukti nyata API getar berjalan
+      // di jam ini. Bila getaran TIDAK terasa, berarti firmware menolak
+      // @system.vibrator (catat di log hilog).
+      setTimeout(aman(function () {
+        console.info('[index] uji-getar: mengirim pola panjang (bukti vibrator hidup)');
+        getarPanjang();
+      }), 8000);
     } catch (e) {
       console.warn('[index] onShow dicegat: ' + e);
     }
@@ -114,31 +118,25 @@ export default {
         });
       }
       this.jadwal = daftar;
-
-      // Kotak ke-6: ringkasan sholat berikutnya (pengganti box pengingat).
-      if (st.berikutnya) {
-        this.infoTeks = st.berikutnya.nama + ' ' + st.berikutnya.waktu;
-        this.warnaInfo = '#ffd166';
-        this.bgInfo = '#1a1508';
-      } else {
-        this.infoTeks = 'Selesai';
-        this.warnaInfo = '#9fb0c3';
-        this.bgInfo = '#101a2b';
-      }
     } else {
       this.jadwal = [];
       this.pesanNext = '';
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
-      this.infoTeks = '--:--';
-      this.warnaInfo = '#9fb0c3';
-      this.bgInfo = '#101a2b';
     }
   }
 };
 
 /* ----------------------------- fungsi kecil ------------------------------- */
 function pad2(n) { return (n < 10 ? '0' + n : '' + n); }
+
+/** Pembungkus aman callback setTimeout/timer — exception tidak boleh lolos
+    ke runtime liteWearable (gejala bila lolos: layar blank). */
+function aman(fn) {
+  return function () {
+    try { fn(); } catch (e) { console.warn('[index] timer dicegat: ' + e); }
+  };
+}
 
 /** Palet per-status utk kotak grid (binding atribut background-color/color,
     BUKAN kelas — aturan LegacyCompileLiteJS). Semua varian kontras penuh:

@@ -40,17 +40,14 @@
   </div>
 
   <!-- ============ GRID WAKTU SHOLAT (2 KOLOM x 3 BARIS) ============
-       Enam kotak rata penuh. Tiap kotak: NAMA waktu + JAM masuknya.
-       Kotak ke-6 = ringkasan sholat berikutnya (pengganti daftar vertikal). -->
+       Lima kotak saja — Subuh|Zuhur / Ashar|Maghrib / Isya.
+       Tiap kotak: NAMA waktu + JAM masuknya.
+       (Kotak ke-6 "Berikutnya" DIHAPUS sesuai permintaan — informasinya
+       sudah ada di BOX "Menuju ..." di atas.) -->
   <div class="grid" if="{{ tersedia }}">
     <div for="{{ jadwal }}" class="sel" background-color="{{ $item.bg }}">
       <text class="sel-nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
       <text class="sel-jam" color="{{ $item.warnaJam }}">{{ $item.waktu }}</text>
-    </div>
-
-    <div class="sel sel-info" background-color="{{ bgInfo }}">
-      <text class="sel-nama" color="#9ed4ff">{{ infoJudul }}</text>
-      <text class="sel-jam sel-jam-kecil" color="{{ warnaInfo }}">{{ infoTeks }}</text>
     </div>
   </div>
 

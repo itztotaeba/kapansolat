@@ -1,14 +1,15 @@
 /* ==========================================================================
-   index.css — VERSI BERSIH: semua elemen dalam box, kontras penuh
+   index.css — VERSI BERSIH + DI-TENGAH (layar GT 7 Pro 454x454 px)
    ==========================================================================
    Panel GT 7 Pro 454x454 px ≈ area pakai ±242x242 dp. Semua tinggi/lebar
    EKSPLISIT (tidak ada baris kosong). Perubahan permintaan pengguna:
+     - seluruh konten DI-PUSATKAN secara vertikal & horizontal (justify-
+       content: center pada .container) — tidak lagi numpuk di atas;
      - font jam "menuju" diperkecil (16px) & sejajar label → tidak menutupi
        hitung mundur;
      - kotak waktu sholat TANPA dome/border/penanda yang mengganggu —
        hanya latar solid gelap + teks nama & JAM yang jelas terbaca;
-     - box status pengingat setelah Isya DIHAPUS (info singkat pindah ke
-       kotak ke-6 grid sebagai "Berikutnya").
+     - box/kotak setelah Isya DIHAPUS — grid hanya berisi 5 waktu sholat.
    Hemat baterai AMOLED: tanpa gradien/animasi.
    ========================================================================== */
 
@@ -17,6 +18,7 @@
   height: 100%;
   flex-direction: column;
   align-items: center;
+  justify-content: center;          /* ← konten di-tengah vertikal */
   background-color: #04060b;
   padding: 6px 8px;
 }
@@ -109,7 +111,7 @@
 /* ============ GRID 2 KOLOM x 3 BARIS: NAMA + JAM SHOLAT ============ */
 .grid {
   width: 226px;
-  height: 114px;
+  height: 114px;                    /* 3 baris x (32px kotak + 6px jarak) */
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -117,7 +119,7 @@
 .sel {
   /* Kotak bersih: TANPA border/dome/penanda — fokus keterbacaan jadwal */
   width: 110px;
-  height: 34px;
+  height: 32px;
   border-radius: 12px;
   border-width: 0px;
   background-color: #152a45;      /* default; ditimpa binding per-status */
@@ -141,14 +143,4 @@
   text-align: right;
   lines: 1;
   color: #ffffff;                 /* default; ditimpa binding */
-}
-.sel-jam-kecil {
-  width: 52px;
-  font-size: 10px;
-  text-overflow: ellipsis;
-}
-
-/* kotak ke-6: ringkasan 'Berikutnya' (pengganti box pengingat lama) */
-.sel-info {
-  background-color: #101a2b;
 }
