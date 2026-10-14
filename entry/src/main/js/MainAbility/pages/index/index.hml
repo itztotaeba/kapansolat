@@ -1,17 +1,21 @@
 <!--
   ============================================================================
-  index.hml — LAYAR UTAMA "KAPAN SOLAT" (versi bersih, semua dalam box)
+  index.hml — LAYAR UTAMA "KAPAN SOLAT" (versi bersih utk LegacyCompileLiteJS)
   ============================================================================
-  Target layar GT 7 Pro 454x454 px. Aturan LiteWearable yang dipatuhi:
-    - class selector TIDAK memakai data binding → kelas selalu statis;
-    - warna per-status di-binding ke ATRIBUT tag tunggal (background-color,
-      border-color, color), bukan `style` maupun `class`;
-    - setiap teks diberi width eksplisit + lines:1 agar tidak hilang.
+  Target layar GT 7 Pro 454x454 px. Aturan LiteWearable yang DIPATUHI KETAT:
+    - TIDAK ada data binding pada atribut `class` (dilarang compiler) →
+      kelas di sini HANYA string statis; warna per-status dibawa lewat
+      ATRIBUT tag tunggal (background-color, color) dengan binding — pola
+      resmi yang sudah terbukti lolos build + render di jam pengguna.
+    - TIDAK memakai atribut kustom `lines` / `text-overflow` pada <text>
+      (memicu warning "use customize attr") → semua teks pendek dan diberi
+      width eksplisit sehingga tidak perlu pemotongan baris.
+    - Setiap elemen punya lebar/tinggi tetap → layout stabil & ter-center.
 
-  Perubahan vs versi lama (permintaan pengguna):
-    - TIDAK ada penanda ✓/▶/➜ dan dome/border mencolok lagi — tiap kotak
-      cukup NAMA + JAM dengan kontras penuh agar jadwal terbaca jelas;
-    - Waktu sholat memakai GRID 2 KOLOM;
+  Desain saat ini:
+    - BOX tanggal+jam → BOX "Menuju ..." (3 baris bertumpuk, font jam kecil)
+      → GRID 2 kolom waktu sholat (nama + jam TERBACA penuh);
+    - Tidak ada penanda centang/panah/dome/border mencolok;
     - Box status pengingat setelah Isya DIHAPUS.
   ============================================================================
 -->
@@ -19,39 +23,36 @@
 
   <!-- ==================== BOX 1: TANGGAL & JAM ==================== -->
   <div class="box box-tanggal">
-    <text class="t-glav" lines="1">{{ tanggalHariIni }}</text>
-    <text class="t-jam" lines="1">{{ jamSekarang }}</text>
+    <text class="t-glav">{{ tanggalHariIni }}</text>
+    <text class="t-jam">{{ jamSekarang }}</text>
   </div>
 
   <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============
-       TIGA BARIS TERPISAH — nama, jam, dan hitung mundur tidak mungkin
-       saling menutupi (penyebab komplain "font jam kegedean"): -->
+       Tiga baris terpisah — nama, jam masuk, dan hitung mundur
+       tidak mungkin saling menutupi. -->
   <div class="box box-next" if="{{ tersedia }}">
-    <text class="t-next-label" lines="1">{{ pesanNext }}</text>
-    <text class="t-next-waktu" lines="1">{{ waktuBerikutnya }}</text>
-    <text class="t-next-sisa" lines="1">{{ sisaWaktu }}</text>
+    <text class="t-next-label">{{ pesanNext }}</text>
+    <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
+    <text class="t-next-sisa">{{ sisaWaktu }}</text>
   </div>
 
   <!-- ==================== BOX: jadwal belum diisi ==================== -->
   <div class="box box-kosong" if="{{ tidakTersedia }}">
-    <text class="t-kosong" lines="2" text-overflow="ellipsis">Isi jadwal di common/jadwal-sholat.js</text>
+    <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
   <!-- ============ GRID WAKTU SHOLAT (2 KOLOM x 3 BARIS) ============
-       Lima kotak saja — Subuh|Zuhur / Ashar|Maghrib / Isya.
-       Tiap kotak: NAMA waktu + JAM masuknya.
-       (Kotak ke-6 "Berikutnya" DIHAPUS sesuai permintaan — informasinya
-       sudah ada di BOX "Menuju ..." di atas.)
+       Lima kotak: Subuh|Zuhur / Ashar|Maghrib / Isya.
+       Tiap kotak menampilkan NAMA + JAM masuknya dengan kontras penuh.
 
-       Catatan teknis: TIDAK memakai atribut kustom background-color/color
-       dengan binding (memicu warning "use customize attr") maupun binding
-       ekspresi pada class (ditolak LegacyCompileLiteJS). Kelas per-status
-       ('mendatang'/'berikutnya'/'berlangsung'/'lewat') disiapkan
-       JavaScript sebagai string $item.kelas dan digabung statis di sini. -->
+       Catatan teknis: warna per-status via binding atribut tag tunggal
+       ($item.bg = background-color kartu, $item.warna = warna jam) —
+       BUKAN binding pada class (ditolak LegacyCompileLiteJS), dan
+       BUKAN atribut kustom lines/text-overflow (memicu warning). -->
   <div class="grid" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" tid="id" class="sel {{ $item.kelas }}">
-      <text class="sel-nama" lines="1">{{ $item.nama }}</text>
-      <text class="sel-jam" lines="1">{{ $item.waktu }}</text>
+    <div for="{{ jadwal }}" tid="id" class="sel" background-color="{{ $item.bg }}">
+      <text class="sel-nama">{{ $item.nama }}</text>
+      <text class="sel-jam" color="{{ $item.warna }}">{{ $item.waktu }}</text>
     </div>
   </div>
 

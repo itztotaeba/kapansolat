@@ -28,7 +28,7 @@
 import { MENIT_SEBELUM } from './jadwal-sholat.js';
 import { tanggalKey, kejadianPengingat, formatSelang } from './waktu.js';
 import {
-  getar, tampilkanNotifikasi, pasangDeretAlarm,
+  getar, getarPanjang, tampilkanNotifikasi, pasangDeretAlarm,
   alarmTersedia, jumlahAlarmTerpasang, jalurAlarmLabel
 } from './device-api.js';
 
@@ -156,16 +156,22 @@ export function aktifkanSemuaMetode() {
  */
 export function ujiAlarmNyata() {
   try {
-    var ok = pasangAlarmKejadian({
-      triggerJam: new Date().getHours(),
-      triggerMenitLokal: new Date().getMinutes(),
-      selangMenit: 1,                 // varian '@system.alarm': delay 60 dtk maks
-      nama: 'Uji alarm',
-      masuk: '(percobaan)',
-      menitSebelum: 0
-    });
-    console.info('[pengingat] ujiAlarmNyata diajukan: ' + ok);
-    return ok;
+    // Catatan: penundaan SEKECIL 1 MENIT pada hmAlarm TIDAK bisa dijamin
+    // (alarm hmAlarm bekerja pada resolusi jam:menit harian). Versi ini
+    // memakai bukti yang lebih jujur: tunggu sampai batas menit berikutnya,
+    // lalu kirim getaran panjang + notifikasi langsung dari pipeline
+    // aplikasi → membuktikan vibrator & notification hidup di jam ini.
+    var kini = new Date();
+    var target = new Date(kini.getFullYear(), kini.getMonth(), kini.getDate(),
+                          kini.getHours(), kini.getMinutes() + 1, 0, 0);
+    var tundaMs = Math.min(target.getTime() - kini.getTime(), 70 * 1000);
+    if (tundaMs < 5000) tundaMs = 5000;
+    console.info('[pengingat] ujiAlarmNyata: getar-bukti dalam ' + Math.round(tundaMs / 1000) + ' dtk');
+    setTimeout(aman(function () {
+      tampilkanNotifikasi({ title: 'Kapan Solat', text: '✔ Uji getar — pipeline pengingat hidup' });
+      getarPanjang();
+    }), tundaMs);
+    return true;
   } catch (e) { console.warn('[pengingat] ujiAlarmNyata dicegat: ' + e); return false; }
 }
 

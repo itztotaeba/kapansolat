@@ -103,19 +103,20 @@ export default {
       }
 
       // GRID 5 waktu sholat + penanda status via WARNA LATAR saja.
-      // Kelas per-status ('mendatang'/'berikutnya'/'berlangsung'/'lewat')
-      // disiapkan di SINI sebagai string $item.kelas — runtime HML tinggal
-      // menggabungkannya dengan kelas statis 'sel'. Tidak ada binding
-      // ekspresi pada atribut class dan tidak ada atribut kustom color.
+      // Warna per-status disiapkan di SINI sebagai $item.bg / $item.warna
+      // lalu di-binding ke ATRIBUT tag tunggal di HML. Tidak ada binding
+      // ekspresi pada atribut class (ditolak LegacyCompileLiteJS).
       var daftar = [];
       for (var i = 0; i < st.daftar.length; i++) {
         var it = st.daftar[i];
+        var w = warnaStatus(it.status, st.berikutnya, it);
         daftar.push({
           id: i,                     // tid utk for-loop
           nama: it.nama,
           waktu: it.waktu || '--:--', // JAM SELALU DITAMPILKAN di tiap kotak
           status: it.status,
-          kelas: kelasStatus(it.status, st.berikutnya, it)
+          bg: w.bg,                    // background-color kartu (binding atribut)
+          warna: w.warna               // warna jam (binding atribut)
         });
       }
       this.jadwal = daftar;
@@ -139,16 +140,17 @@ function aman(fn) {
   };
 }
 
-/** Kelas CSS per-status utk kotak grid (dipilih JavaScript → $item.kelas).
-    Warna didefinisikan di index.css (.mendatang/.berikutnya/.berlangsung/
-    .lewat). Semua varian kontras penuh: nama & JAM selalu mudah dibaca;
-    hanya tingkat kecerahan latar yang membedakan status. */
-function kelasStatus(status, berikutnya, it) {
-  if (status === 'lewat') return 'lewat';          // sudah lewat → gelap redup
-  if (status === 'berlangsung') return 'berlangsung'; // masa H-10 menit → hijau
-  // sholat terdekat berikutnya → biru terang; sisanya biru standar
-  if (berikutnya && !berikutnya.besok && berikutnya.nama === it.nama) return 'berikutnya';
-  return 'mendatang';
+/** Palet warna per-status utk kotak grid (dipilih JavaScript → $item.bg /
+    $item.warna). Warna dibawa lewat ATRIBUT tag tunggal di HML (binding
+    atribut didukung runtime), BUKAN lewat binding class (ditolak compiler).
+    Semua varian kontras penuh: nama & JAM selalu mudah dibaca; hanya
+    tingkat kecerahan latar yang membedakan status. */
+function warnaStatus(status, berikutnya, it) {
+  if (status === 'lewat')        return { bg: '#2A2F38', warna: '#9AA4B2' }; // lewat → abu redup
+  if (status === 'berlangsung')  return { bg: '#103524', warna: '#7CF5B8' }; // masa H-10 mnt → hijau
+  if (berikutnya && !berikutnya.besok && berikutnya.nama === it.nama)
+                                 return { bg: '#1D3A5F', warna: '#FFFFFF' }; // berikutnya → biru terang
+  return { bg: '#152A45', warna: '#EAF2FF' };                                 // mendatang → biru
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */

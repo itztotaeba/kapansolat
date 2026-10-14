@@ -8,9 +8,10 @@
        center pada .container);
      - tiap kotak grid = NAMA + JAM sholat, TANPA garis/centang/dome;
      - box setelah Isya DIHAPUS (grid hanya 5 waktu sholat).
-   Warna per-status memakai KELAS CSS (.lewat/.berlangsung/.berikutnya)
-   yang dipilihkan JavaScript lewat properti `kelas` tiap item — BUKAN
-   binding ekspresi di atribut class maupun atribut kustom color pada tag.
+   Warna per-status dibawa lewat ATRIBUT tag tunggal dengan binding
+   (background-color / color) yang nilainya disiapkan JavaScript lewat
+   properti bg & warna tiap item — pola resmi LiteWearable; binding
+   ekspresi pada atribut class DILARANG compiler LegacyCompileLiteJS.
    Hemat baterai AMOLED: tanpa gradien/animasi.
    ========================================================================== */
 
@@ -128,16 +129,3 @@
   color: #ffffff;
 }
 
-/* ---- varian warna per-status (kelas dipilih JavaScript via $item.kelas) ---- */
-.mendatang {                       /* masih jauh → biru standar */
-  background-color: #152a45;
-}
-.berikutnya {                      /* sholat terdekat berikutnya → biru terang */
-  background-color: #1d3a5f;
-}
-.berlangsung {                     /* masa H-10 menit → hijau lembut */
-  background-color: #103524;
-}
-.lewat {                           /* sudah lewat → gelap redup, teks tetap jelas */
-  background-color: #0c1119;
-}
