@@ -1,24 +1,18 @@
 <!--
   ============================================================================
-  index.hml — LAYAR UTAMA (redesign: SETIAP ELEMEN DALAM BOX/KARTU SENDIRI)
+  index.hml — LAYAR UTAMA "KAPAN SOLAT" (grid 2 kolom, tiap sel ber-kotak)
   ============================================================================
-  Ukuran desain: 192 x 452 dp ≈ layar GT 7 Pro (454x454 px, area pakai ~80%).
-  Semua tinggi/lebar blok ditulis EKSPISIT dalam px sehingga tidak pernah ada
-  "baris kosong tak jelas" seperti laporan sebelumnya.
+  Target layar GT 7 Pro 454x454 px. Aturan LiteWearable yang dipatuhi:
+    - class selector TIDAK memakai data binding → kelas selalu statis;
+    - warna per-status di-binding ke ATRIBUT tag tunggal (background-color,
+      border-color, color), bukan lewat `style` maupun `class`;
+    - setiap teks diberi width eksplisit + lines:1 agar tidak hilang.
 
-  Struktur (semua berkotak, jarak seragam):
-    [BOX 1] Tanggal hari ini + jam sistem          (h 62)
-    [BOX 2] Menuju sholat berikutnya + hitung mundur (h 104)
-    [BOX 3..7] Lima kartu waktu sholat             (h 44 @84..)
-    [BOX 8] Status pengingat/alarm Metode B        (h 44) ← tanpa pesan
-            "tak tersedia"; alarm dicari lewat 4 jalur & dipasang otomatis.
-
-  Aturan kompilator/runtime LiteWearable yang dipatuhi file ini:
-    - class selector TIDAK boleh memakai data binding → kelas selalu statis;
-    - atribut gaya per-item di-binding LANGSUNG ke tag tunggal
-      (background-color / color / border-color), bukan `style="..."`;
-    - setiap teks diberi width eksplisit + text-overflow ellipsis agar
-      binding apa pun selalu punya tempat tampil (tidak hilang diam-diam).
+  Struktur:
+    [BOX] Tanggal hari ini + jam sistem
+    [BOX] Menuju sholat berikutnya (label · waktu · hitung mundur)
+    [GRID 2 KOLOM] 6 kotak: Subuh | Zuhur / Ashar | Maghrib / Isya | Pengingat
+      → tiap kotak menampilkan NAMA waktu DAN JAM-nya (bukan daftar vertikal)
   ============================================================================
 -->
 <div class="container">
@@ -29,9 +23,7 @@
     <text class="t-jam">{{ jamSekarang }}</text>
   </div>
 
-  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (glass besar) ============
-       "pesanNext" satu string utuh ("Menuju Ashar") — hindari binding dua
-       token berdempetan yang rawan gagal render di runtime lite. -->
+  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============ -->
   <div class="box box-next" if="{{ tersedia }}">
     <div class="dome"></div>
     <text class="t-next-label">{{ pesanNext }}</text>
@@ -39,30 +31,29 @@
     <text class="t-next-sisa">{{ sisaWaktu }}</text>
   </div>
 
-  <!-- ==================== BOX: JADWAL BELUM DIAISI ==================== -->
+  <!-- ==================== BOX: jadwal belum diisi ==================== -->
   <div class="box box-kosong" if="{{ tidakTersedia }}">
     <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ============ BOX 3-7: KARTU GLASS TIAP WAKTU SHOLAT ============
-       Tiap baris = satu kartu mandiri (liquid glass): dome highlight di
-       tepi atas + rim cahaya. Warna per-status via binding ATRIBUT. -->
-  <div class="daftar" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" class="box baris" background-color="{{ $item.bg }}" border-color="{{ $item.rim }}">
-      <div class="baris-dome" background-color="{{ $item.dome }}"></div>
-      <text class="t-penanda" color="{{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
-      <text class="t-nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
-      <text class="t-waktu" color="{{ $item.warnaTeks }}">{{ $item.waktu }}</text>
+  <!-- ============ GRID WAKTU SHOLAT (2 KOLOM, Tiap SEL = KARTU KACA) =====
+       5 sel waktu sholat (for) + 1 sel pengingat = grid 3 baris x 2 kolom.
+       Setiap sel: penanda status + NAMA waktu + JAM masuknya. -->
+  <div class="grid" if="{{ tersedia }}">
+    <div for="{{ jadwal }}" class="sel" background-color="{{ $item.bg }}" border-color="{{ $item.rim }}">
+      <div class="sel-dome" background-color="{{ $item.dome }}"></div>
+      <text class="sel-penanda" color="{{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
+      <text class="sel-nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
+      <text class="sel-jam" color="{{ $item.warnaJam }}">{{ $item.waktu }}</text>
     </div>
-  </div>
 
-  <!-- ============ BOX 8: STATUS PENGINGET (Metode A + Alarm B) ============
-       Menggantikan pesan lama "modul alarm tak tersedia". `statusPengingat`
-       kini SELALU terisi dari index.js (satu string utuh, aman untuk binding
-       liteWearable); hmAlarm dicari otomatis lewat 4 jalur & dipasang ulang
-       tiap aplikasi dibuka / ganti hari. -->
-  <div class="box box-alarm">
-    <text class="t-alarm" color="{{ warnaAlarm }}">{{ statusPengingat }}</text>
+    <!-- SEL KE-6: status pengingat (Metode A+B) dalam kotak yang sama -->
+    <div class="sel sel-alarm" background-color="{{ bgAlarm }}" border-color="{{ rimAlarm }}">
+      <div class="sel-dome" background-color="{{ domeAlarm }}"></div>
+      <text class="sel-penanda" color="#7fdca4">⏰</text>
+      <text class="sel-nama" color="#cfe8d8">Pengingat</text>
+      <text class="sel-jam sel-jam-kecil" color="{{ warnaAlarm }}">{{ ringkasAlarm }}</text>
+    </div>
   </div>
 
 </div>

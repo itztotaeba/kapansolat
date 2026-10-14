@@ -92,38 +92,75 @@ export function tampilkanNotifikasi(s) {
 
 /* ------------------------------- ALARM ------------------------------------ */
 /**
- * Pasang SATU alarm sistem untuk `detikDariSekarang` ke depan.
+ * Pasang SATU alarm sistem H-x menit sebelum waktu sholat.
  * Alarm bekerja walau aplikasi ditutup — inilah Metode B.
  *
  * Parameter mengikuti format RESMI contoh SDK liteWearable:
  *   hmAlarm.setAlarm({ hour, minute, vibration, label })
- * Field tambahan (time/delay) ikut dikirim untuk SDK varian lain; field
- * yang tidak dikenal akan diabaikan runtime.
+ * Field tambahan (time/delay) ikut dikirim untuk SDK varian lain yang
+ * memakai hitungan-detik; field yang tidak dikenal akan diabaikan runtime.
+ *
+ * BUG VERSI LAMA YANG DIPERBAIKI DI SINI:
+ *  - delay dihitung dari `ev.triggerMenit` yang TIDAK ADA di objek kejadian
+ *    (NaN → semua permintaan alarm ditolak firmware → "alarm tidak pernah
+ *    berjalan"). Sekarang memakai selangMenit yang benar (epoch-menit).
+ *  - jam trigger memakai Date lokal dari epoch — kini diambil langsung dari
+ *    ev.triggerJam/triggerMenitLokal hasil perhitungan waktu.js (robust
+ *    terhadap wrap tengah malam pada Subuh).
  *
  * Catatan penting LiteWearable:
  *  - Kapasitas alarm sistem terbatas (umumnya ±10 alarm aktif).
  *  - Sebagian SDK hanya mendukung alarm one-shot dalam hitungan detik/menit,
- *    bukan "alarm harian". Karena itu kita pasang ulang tiap kali aplikasi
- *    dibuka DAN saat pergantian hari (lihat pasangDeretAlarm + pengingat.js),
+ *    bukan "alarm harian". Karena itu kita pasang ulang tiap aplikasi dibuka
+ *    DAN saat pergantian hari (lihat pasangDeretAlarm + pengingat.js),
  *    sehingga tetap "otomatis terpasang untuk tiap hari".
  *
- * @param {number} detikDariSekarang - delay dalam DETIK (>= 1)
- * @param {string} label             - keterangan yang tampil saat alarm bunyi
- * @param {boolean} getarkan         - aktifkan getaran saat alarm
+ * @param {Object} ev - satu kejadian dari waktu.js#kejadianPengingat
  * @returns {boolean} sukses dipasang
  */
-export function pasangAlarm(detikDariSekarang, label, getarkan) {
+export function pasangAlarmKejadian(ev) {
   // coba deteksi ulang bila belum ketemu (idempoten & murah)
   if (!modulAlarmTersedia()) { try { deteksiModulAlarm(null); } catch (e) {} }
   if (!modulAlarmTersedia()) return false;
   try {
-    var wktuTrigger = Date.now() + Math.max(1, detikDariSekarang) * 1000;
+    var selangDetik = Math.max(30, (ev.selangMenit || 0) * 60);
+    var ok = panggilSetAlarm({
+      hour: ev.triggerJam,                  // jam LOCAL trigger (H-10 mnt)
+      minute: ev.triggerMenitLokal,         // menit LOCAL trigger
+      time: Date.now() + selangDetik * 1000,  // varian SDK berbasis epoch-ms
+      delay: selangDetik,                     // varian SDK berbasis detik
+      label: '⏰ ' + ev.nama + ' ' + (ev.menitSebelum || 10) + ' menit lagi · masuk ' + ev.masuk,
+      vibration: true,                    // getaran saat alarm (Metode B)
+      success: function () {
+        console.info('[device-api] alarm terpasang: ' + ev.nama + ' ' + ev.triggerJam + ':' + ev.triggerMenitLokal);
+      },
+      fail: function (err, msg) {
+        console.warn('[device-api] alarm gagal (' + err + '): ' + msg);
+      }
+    });
+    return ok;
+  } catch (e) {
+    console.warn('[device-api] pasangAlarmKejadian exception: ' + e);
+    return false;
+  }
+}
+
+/**
+ * Pasang SATU alarm sistem untuk `detikDariSekarang` ke depan (API umum,
+ * dipakai juga oleh skenario kustom). Lihat catatan pada pasangAlarmKejadian.
+ */
+export function pasangAlarm(detikDariSekarang, label, getarkan) {
+  if (!modulAlarmTersedia()) { try { deteksiModulAlarm(null); } catch (e) {} }
+  if (!modulAlarmTersedia()) return false;
+  try {
+    var detik = Math.max(1, detikDariSekarang || 0);
+    var wktuTrigger = Date.now() + detik * 1000;
     var d = new Date(wktuTrigger);
     var ok = panggilSetAlarm({
       hour: d.getHours(),                 // jam trigger (waktu lokal)
       minute: d.getMinutes(),             // menit trigger
       time: wktuTrigger,                  // beberapa SDK memakai epoch-ms
-      delay: Math.max(1, detikDariSekarang), // ...beberapa memakai delay-detik
+      delay: detik,                       // ...beberapa memakai delay-detik
       label: label,                       // teks keterangan saat alarm berbunyi
       vibration: !!getarkan,              // getaran saat alarm (Metode B)
       success: function () {
@@ -179,11 +216,12 @@ export function pasangDeretAlarm(kejadian) {
   var count = 0;
   for (var i = 0; i < kejadian.length && count < MAX_ALARM; i++) {
     var ev = kejadian[i];
-    var delayDetik = ev.triggerMenit * 60;
-    var label = '⏰ ' + ev.nama + ' ' + ev.masuk + ' (' + ev.tanggalKey + ')';
-    if (pasangAlarm(delayDetik, label, true)) count++;
+    if (!ev || ev.triggerJam === undefined || ev.triggerMenitLokal === undefined) continue;
+    // BUG LAMA: memakai ev.triggerMenit (undefined → NaN → firmware menolak
+    // semua alarm). Kini lewat pasangAlarmKejadian yang memakai selangMenit.
+    if (pasangAlarmKejadian(ev)) count++;
   }
   setJumlahAlarmTerpasang(count);
-  console.info('[device-api] pasangDeretAlarm: ' + count + ' alarm terpasang');
+  console.info('[device-api] pasangDeretAlarm: ' + count + '/' + kejadian.length + ' alarm terpasang');
   return count;
 }
