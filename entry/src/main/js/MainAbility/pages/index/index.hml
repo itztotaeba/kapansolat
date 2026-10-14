@@ -30,15 +30,20 @@
     <text class="kosong-teks">Jadwal belum tersedia. Isi blok data di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ===== 3. DAFTAR 5 WAKTU SHOLAT ===== -->
-  <list class="daftar" if="{{ tersedia }}">
-    <list-item for="{{ jadwal }}" class="baris {{ $item.status }}">
-      <div class="baris-dalam">
-        <text class="penanda">{{ $item.penanda }}</text>
-        <text class="nama">{{ $item.nama }}</text>
-        <text class="waktu">{{ $item.waktu }}</text>
-      </div>
-    </list-item>
-  </list>
+  <!-- ===== 3. DAFTAR 5 WAKTU SHOLAT =====
+       CATATAN KOMPILER LiteWearable:
+       - class selector TIDAK mendukung data binding, jadi `class="baris {{ ... }}"`
+         akan ERROR saat LegacyCompileLiteJS. Solusi: kelas baris bersifat statis
+         dan warna/opacity per-status dibawa lewat ATRIBUT LANGSUNG (style binding
+         seperti `color` memang didukung), bukan lewat pergantian kelas.
+       - `<list>`/`<list-item>` juga punya keterbatasan gaya per-item; karena hanya
+         ada 5 baris, dipakai `<div>` + `for` biasa (tanpa virtual list). -->
+  <div class="daftar" if="{{ tersedia }}">
+    <div for="{{ jadwal }}" class="baris" style="background-color: {{ $item.bg }}; opacity: {{ $item.opacity }}">
+      <text class="penanda" style="color: {{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
+      <text class="nama" style="color: {{ $item.warnaTeks }}">{{ $item.nama }}</text>
+      <text class="waktu" style="color: {{ $item.warnaTeks }}">{{ $item.waktu }}</text>
+    </div>
+  </div>
 
 </div>
