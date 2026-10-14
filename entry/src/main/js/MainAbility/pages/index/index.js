@@ -16,8 +16,7 @@
  */
 
 import { statusHariIni, formatTanggalID } from '../../common/waktu.js';
-import { aktifkanSemuaMetode, hentikanPemantauan, statusAlarmSistem } from '../../common/pengingat.js';
-import { MENIT_SEBELUM } from '../../common/jadwal-sholat.js';
+import { aktifkanSemuaMetode, hentikanPemantauan } from '../../common/pengingat.js';
 
 export default {
   data: {
@@ -25,11 +24,10 @@ export default {
     jamSekarang: '',
     tersedia: false,
     tidakTersedia: true, // kebalikan eksplisit (hindari operator '!' di binding)
-    namaBerikutnya: '',
+    pesanNext: '',   // satu string utuh 'Menuju Ashar' (hindari binding dua token)
     waktuBerikutnya: '',
     sisaWaktu: '',
-    statusAlarm: '',
-    jadwal: [] // [{nama, waktu, status, penanda, bg, rim, warnaTeks, warnaPenanda, opacity}]
+    jadwal: [] // [{nama,waktu,status,penanda,bg,rim,dome,warnaTeks,warnaPenanda}]
   },
 
   onInit() {
@@ -74,11 +72,11 @@ export default {
     if (st.tersedia) {
       // Kartu berikutnya
       if (st.berikutnya) {
-        this.namaBerikutnya = st.berikutnya.nama + (st.berikutnya.besok ? ' (besok)' : '');
+        this.pesanNext = 'Menuju ' + st.berikutnya.nama + (st.berikutnya.besok ? ' (besok)' : '');
         this.waktuBerikutnya = st.berikutnya.waktu;
         this.sisaWaktu = hitungSisa(st.berikutnya.selangMenit);
       } else {
-        this.namaBerikutnya = '-';
+        this.pesanNext = 'Menuju —';
         this.waktuBerikutnya = '--:--';
         this.sisaWaktu = 'Jadwal hari ini selesai';
       }
@@ -98,28 +96,21 @@ export default {
           penanda: penandaStatus(it),
           bg: t.bg,
           rim: t.rim,
+          dome: t.dome,
           warnaTeks: t.teks,
-          warnaPenanda: t.penanda,
-          opacity: t.opacity
+          warnaPenanda: t.penanda
         });
       }
       this.jadwal = daftar;
 
-      // Status Metode B (alarm sistem) — dipasang otomatis saat app dibuka.
-      var sa = statusAlarmSistem();
-      if (sa.dipasang > 0) {
-        this.statusAlarm = '🔔 Alarm sistem: ' + sa.dipasang + ' aktif • H-' + MENIT_SEBELUM + ' menit';
-      } else if (sa.tersedia) {
-        this.statusAlarm = 'Pengingat H-' + MENIT_SEBELUM + ' menit • alarm 0 (buka app tiap hari)';
-      } else {
-        this.statusAlarm = '⚠ Modul alarm tak tersedia • pengingat hanya saat app terbuka';
-      }
+      // Catatan: status Metode B TIDAK ditampilkan di layar (menghemat ruang;
+      // pesan 'modul alarm tak tersedia' membingungkan pengguna). Pemasangan
+      // alarm tetap berjalan otomatis dan tercatat di console log jam.
     } else {
       this.jadwal = [];
-      this.namaBerikutnya = '';
+      this.pesanNext = '';
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
-      this.statusAlarm = '';
     }
   }
 };
@@ -140,15 +131,15 @@ function penandaStatus(it) {
     agar runtime liteWearable menerima tipe atribut yang paling andal. */
 function temaStatus(status) {
   if (status === 'lewat') {
-    // redup agar fokus pada waktu yang tersisa
-    return { bg: '#080b10', rim: '#161b22', teks: '#5f6368', penanda: '#5f6368', opacity: '1' };
+    // kartu kaca redup agar fokus pada waktu yang tersisa
+    return { bg: '#0a0e15', rim: '#1d2530', dome: '#2a3644', teks: '#67707b', penanda: '#67707b' };
   }
   if (status === 'berlangsung') {
-    // masa H-10 menit menjelang masuk waktu (hijau)
-    return { bg: '#0f3d26', rim: '#3ddc84', teks: '#6ee7a0', penanda: '#6ee7a0', opacity: '1' };
+    // masa H-10 menit menjelang masuk waktu (glass hijau)
+    return { bg: '#103524', rim: '#3ddc84', dome: '#4fe08f', teks: '#b9f5d3', penanda: '#6ee7a0' };
   }
-  // berikutnya / mendatang — panel biru-glass
-  return { bg: '#101a2a', rim: '#3a5a86', teks: '#eaf1f8', penanda: '#9ed4ff', opacity: '1' };
+  // berikutnya / mendatang — glass biru seperti kartu utama
+  return { bg: '#152a45', rim: '#4a6fa5', dome: '#55719a', teks: '#eaf1f8', penanda: '#9ed4ff' };
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */

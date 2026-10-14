@@ -12,7 +12,7 @@ waktu berikutnya, dan mengingatkan **10 menit sebelum sholat** dengan dua metode
 | Hitung mundur | "Menuju Ashar — 15:09 — ⏳ 1 jam 15 menit lagi" |
 | Pengingat Metode A | Aplikasi terbuka → cek tiap 30 detik → notifikasi layar + getar: `⏰ [Nama] 10 menit lagi! Waktu masuk: JJ:MM` |
 | Pengingat Metode B | Alarm sistem `hmAlarm` (getar + label) → tetap berbunyi walau aplikasi ditutup; otomatis dipasang ulang saat app dibuka/ganti hari |
-| Tampilan kartu "liquid glass" | Panel kaca gaya iOS 26: border-radius besar, rim cahaya tipis, highlight lengkung — dibuat murni dari lapisan div + opacity, TANPA animasi |
+| Tampilan kartu "liquid glass" | Panel kaca gaya iOS 26 pada kartu utama DAN SETIAP BARIS waktu sholat: border-radius besar, rim cahaya tipis, highlight lengkung — murni lapisan div + opacity, TANPA animasi |
 | Hemat baterai | Tanpa animasi, tanpa gambar besar, timer berhenti saat halaman tidak tampil, murni JS tanpa library |
 
 ## 🔔 Bagaimana pengingat H-10 menit bekerja?
@@ -23,14 +23,18 @@ waktu berikutnya, dan mengingatkan **10 menit sebelum sholat** dengan dua metode
 - **Metode B**: alarm sistem (`hmAlarm`) untuk sisa kejadian hari ini + besok
   langsung didaftarkan ulang secara otomatis (getaran + label mis.
   `⏰ Ashar 15:09 (2026-10-14)`). Alarm ini tetap berbunyi walau aplikasi ditutup.
-- Status pemasangan alarm terlihat di kartu kecil bawah layar utama, contoh:
-  `🔔 Alarm sistem: 8 aktif • H-10 menit`.
+- Pemasangan alarm dicoba OTOMATIS terus: saat app dibuka, setiap pergantian
+  hari, dan setiap siklus 30 detik selama app terbuka sampai modul `hmAlarm`
+  berhasil dideteksi (tidak perlu buka-tutup app bila runtime mendaftarkan
+  modulnya belakangan). Sekali terpasang hari itu, tidak ada pekerjaan ulang.
 - Jumlah menit sebelum sholat bisa diubah di satu tempat:
   `MENIT_SEBELUM` pada `common/jadwal-sholat.js` (default 10) — dipakai oleh
   KEDUA metode sekaligus.
 - Karena alarm liteWearable bersifat one-shot dengan kapasitas ±10, biasakan
   membuka aplikasi minimal sekali sehari (mis. setelah Subuh) agar alarm hari
   berikutnya terpasang ulang.
+- Status alarm sengaja TIDAK ditampilkan di layar utama (menghemat ruang);
+  catatan pemasangan ada di log: `hdc shell hilog | grep device-api`.
 
 ## 📁 Struktur Proyek (mengikuti template default DevEco Studio)
 ```
