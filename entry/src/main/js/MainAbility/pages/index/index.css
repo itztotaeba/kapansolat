@@ -1,13 +1,15 @@
 /* ==========================================================================
-   index.css — GRID 2 KOLOM, SETIAP SEL DALAM KOTAK SENDIRI (liquid glass)
+   index.css — VERSI BERSIH: semua elemen dalam box, kontras penuh
    ==========================================================================
-   Panel GT 7 Pro 454x454 px ≈ area pakai 242x242 dp. Semua tinggi/lebar
-   EKSPISIT sehingga tidak ada baris kosong tak jelas:
-     y=6    [tanggal ] h46  + gap 6
-     y=58   [menuju  ] h64  + gap 6
-     y=128  [grid 3x2] h110 (3 × 34dp + gap 4)
-   Prinsip hemat baterai AMOLED: tanpa gradien/animasi; efek kaca = panel
-   solid gelap + rim border + dome highlight lengkung di tepi atas tiap sel.
+   Panel GT 7 Pro 454x454 px ≈ area pakai ±242x242 dp. Semua tinggi/lebar
+   EKSPLISIT (tidak ada baris kosong). Perubahan permintaan pengguna:
+     - font jam "menuju" diperkecil (16px) & sejajar label → tidak menutupi
+       hitung mundur;
+     - kotak waktu sholat TANPA dome/border/penanda yang mengganggu —
+       hanya latar solid gelap + teks nama & JAM yang jelas terbaca;
+     - box status pengingat setelah Isya DIHAPUS (info singkat pindah ke
+       kotak ke-6 grid sebagai "Berikutnya").
+   Hemat baterai AMOLED: tanpa gradien/animasi.
    ========================================================================== */
 
 .container {
@@ -22,33 +24,18 @@
 /* ---------- gaya KOTAK umum ---------- */
 .box {
   width: 226px;
-  border-radius: 16px;
-  border-width: 1px;
-  border-color: #2a3a52;
+  border-radius: 14px;
+  border-width: 0px;
   background-color: #101a2b;
-  position: relative;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   margin-bottom: 6px;
 }
 
-/* dome highlight khas kaca — tepi ATAS box besar */
-.dome {
-  position: absolute;
-  left: 20px;
-  top: 3px;
-  width: 186px;
-  height: 12px;
-  border-radius: 8px;
-  background-color: #3d5a86;
-  opacity: 0.35;
-}
-
 /* ==================== BOX 1: TANGGAL & JAM ==================== */
 .box-tanggal {
-  height: 46px;
-  border-color: #223048;
+  height: 44px;
   background-color: #0b1220;
 }
 .t-glav {
@@ -61,50 +48,53 @@
 }
 .t-jam {
   width: 218px;
-  font-size: 18px;
+  font-size: 17px;
   color: #ffffff;
   text-align: center;
-  margin-top: 1px;
   lines: 1;
 }
 
 /* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============ */
 .box-next {
-  height: 64px;
-  border-radius: 20px;
-  border-color: #4a6fa5;
+  height: 58px;
   background-color: #16283f;
 }
-.t-next-label {
+/* baris pertama: label (kiri) + jam (kanan), sejajar & kompak */
+.r-next {
   width: 218px;
-  font-size: 11px;
+  height: 22px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.t-next-label {
+  width: 140px;
+  font-size: 12px;
   color: #9ed4ff;
-  text-align: center;
   lines: 1;
   text-overflow: ellipsis;
 }
+/* FONT JAM DIPERKECIL (16px, dulu 22px) agar tidak menutupi countdown */
 .t-next-waktu {
-  width: 218px;
-  font-size: 22px;
+  width: 70px;
+  font-size: 16px;
   color: #ffffff;
-  text-align: center;
-  margin-top: 1px;
+  text-align: right;
   lines: 1;
 }
 .t-next-sisa {
   width: 218px;
-  font-size: 11px;
+  font-size: 12px;
   color: #ffd166;
   text-align: center;
-  margin-top: 2px;
+  margin-top: 4px;
   lines: 1;
   text-overflow: ellipsis;
 }
 
 /* ==================== BOX: jadwal belum diisi ==================== */
 .box-kosong {
-  height: 64px;
-  border-color: #5a2f3a;
+  height: 58px;
   background-color: #1d1015;
 }
 .t-kosong {
@@ -116,65 +106,49 @@
   text-overflow: ellipsis;
 }
 
-/* ============ GRID 2 KOLOM: SEL WAKTU SHOLAT + PENGINGAT ============ */
+/* ============ GRID 2 KOLOM x 3 BARIS: NAMA + JAM SHOLAT ============ */
 .grid {
   width: 226px;
-  height: 110px;
+  height: 114px;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-between;
 }
 .sel {
-  /* SATU KOTAK KACA PER ITEM: penanda + nama + jam */
+  /* Kotak bersih: TANPA border/dome/penanda — fokus keterbacaan jadwal */
   width: 110px;
   height: 34px;
   border-radius: 12px;
-  border-width: 1px;
-  border-color: #4a6fa5;          /* default; ditimpa binding per-status */
+  border-width: 0px;
   background-color: #152a45;      /* default; ditimpa binding per-status */
-  position: relative;
   flex-direction: row;
   align-items: center;
-  margin-bottom: 4px;
-}
-/* dome tipis khas liquid-glass di tepi atas SETIAP sel */
-.sel-dome {
-  position: absolute;
-  left: 8px;
-  top: 2px;
-  width: 70px;
-  height: 5px;
-  border-radius: 3px;
-  background-color: #55719a;
-  opacity: 0.30;
-}
-.sel-penanda {
-  width: 16px;
-  font-size: 11px;
-  text-align: center;
-  lines: 1;
-  color: #9ed4ff;                 /* default; ditimpa binding */
+  justify-content: space-between;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-bottom: 6px;
 }
 .sel-nama {
-  width: 46px;
+  width: 58px;
   font-size: 12px;
   lines: 1;
   text-overflow: ellipsis;
   color: #eaf1f8;                 /* default; ditimpa binding */
 }
 .sel-jam {
-  width: 44px;
+  width: 36px;
   font-size: 13px;
   text-align: right;
   lines: 1;
   color: #ffffff;                 /* default; ditimpa binding */
 }
 .sel-jam-kecil {
+  width: 52px;
   font-size: 10px;
+  text-overflow: ellipsis;
 }
 
-/* sel ke-6 (pengingat): warna default hijau gelap (ditimpa binding) */
-.sel-alarm {
-  background-color: #0d1a14;
-  border-color: #234034;
+/* kotak ke-6: ringkasan 'Berikutnya' (pengganti box pengingat lama) */
+.sel-info {
+  background-color: #101a2b;
 }

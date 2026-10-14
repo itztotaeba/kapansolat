@@ -83,7 +83,7 @@ function satuKaliCek() {
     var ev = kejadian[i];
     var id = ev.id;
     if (_sudahPicu[id]) continue;          // sudah pernah dipicu hari ini
-    if (ev.triggerMenit <= MENIT_SEBELUM) {
+    if (ev.selangMenit >= 0 && ev.selangMenit <= MENIT_SEBELUM + 1) {
       // TEPAT 10 MENIT (atau kurang) SEBELUM WAKTU MASUK → PICU SEKALI
       _sudahPicu[id] = true;
       var pesan = '⏰ ' + ev.nama + ' ' + MENIT_SEBELUM + ' menit lagi! Waktu masuk: ' + ev.masuk;
@@ -146,17 +146,18 @@ export function statusAlarmSistem() {
 export function teksStatusPengingat() {
   try {
     var n = jumlahAlarmTerpasang();
-    if (alarmTersedia() && n > 0) {
-      return '⚙ Alarm sistem aktif: ' + n + '× H-' + MENIT_SEBELUM + ' mnt (' + jalurAlarmLabel() + ')';
+    if (n > 0) {
+      // Metode B BENAR-BENAR aktif: n alarm sistem H-10 menit sudah terdafar
+      return 'Alarm sistem aktif: ' + n + '× H-' + MENIT_SEBELUM + ' mnt (' + jalurAlarmLabel() + ')';
     }
     if (alarmTersedia()) {
-      return '⚙ Alarm sistem siap · pasang ulang ' + MENIT_SEBELUM + ' mnt otomatis';
+      return 'Alarm sistem siap · menunggu jadwal hari ini';
     }
-    // Bukan pesan error: metode A tetap jalan penuh dan pencarian modul
-    // alarm (hmAlarm, 4 jalur) dicoba ulang otomatis tiap siklus 30 detik.
-    return '⚙ Pengingat H-' + MENIT_SEBELUM + ' mnt aktif · alarm sistem sedang disiapkan otomatis';
+    // hmAlarm belum terdeteksi firmware. BUKAN pesan error: Metode A tetap
+    // jalan penuh dan pencarian modul (3 jalur) dicoba ulang tiap 30 detik.
+    return 'Pengingat H-' + MENIT_SEBELUM + ' mnt aktif dalam aplikasi';
   } catch (e) {
-    return '⚙ Pengingat berjalan';
+    return 'Pengingat berjalan';
   }
 }
 

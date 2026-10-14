@@ -1,20 +1,27 @@
 /**
  * ============================================================================
- * index.js — LOGIKA LAYAR UTAMA (grid 2 kolom waktu sholat + pengingat)
+ * index.js — LOGIKA LAYAR UTAMA (versi bersih, semua dalam box)
  * ============================================================================
  * Alur:
- *   onInit      : siapkan data awal.
- *   onShow      : jalankan METODA A (timer 30 dtk) + METODA B (hmAlarm),
+ *   onInit      : siapkan data awal + daftarkan konteks halaman utk hmAlarm.
+ *   onShow      : jalankan METODE A (timer 30 dtk) + METODE B (hmAlarm),
  *                 lalu refresh tampilan.
  *   onHide/
  *   onDestroy   : hentikan timer (hemat baterai; aplikasi tidak berjalan di
- *                 latar belakang).
+ *                 latar belakang). Alarm sistem tetap bekerja sendiri.
  * Refresh cukup tiap 30 detik — perubahan menit baru terlihat tiap 1 menit.
+ *
+ * Perubahan vs versi lama (permintaan pengguna):
+ *   - jam pada kartu "Menuju" diperkecil & sejajar label (lihat CSS) agar
+ *     tidak menutupi hitung mundur;
+ *   - tiap kotak grid = NAMA + JAM sholat (tanpa penanda ✓/▶/➜, tanpa dome);
+ *   - box status pengingat setelah Isya DIHAPUS; info singkat berikutnya
+ *     menempati kotak ke-6 grid.
  * ============================================================================
  */
 
 import { statusHariIni, formatTanggalID } from '../../common/waktu.js';
-import { aktifkanSemuaMetode, hentikanPemantauan, teksStatusPengingat } from '../../common/pengingat.js';
+import { aktifkanSemuaMetode, hentikanPemantauan } from '../../common/pengingat.js';
 import { daftarkanKonteksAlarm } from '../../common/device-api.js';
 
 export default {
@@ -24,14 +31,13 @@ export default {
     tersedia: false,
     tidakTersedia: true, // kebalikan eksplisit (hindari operator '!' di binding)
     pesanNext: '',       // satu string utuh 'Menuju Ashar'
-    waktuBerikutnya: '',
-    sisaWaktu: '',
-    jadwal: [],          // [{nama,waktu,penanda,bg,rim,dome,warnaTeks,warnaJam,warnaPenanda}]
-    ringkasAlarm: 'H-10 mnt', // sel ke-6 grid: ringkasan status pengingat
-    warnaAlarm: '#7fdca4',
-    bgAlarm: '#0d1a14',  // liquid-glass utk sel pengingat (ditentukan status)
-    rimAlarm: '#234034',
-    domeAlarm: '#2f5a44'
+    waktuBerikutnya: '', // jam sholat berikutnya (font kecil, sejajar label)
+    sisaWaktu: '',       // hitung mundur 'x jam y menit lagi'
+    jadwal: [],          // [{nama,waktu,status,bg,warnaTeks,warnaJam}]
+    infoJudul: 'Berikutnya',   // kotak ke-6 grid: ringkasan sholat berikutnya
+    infoTeks: '--:--',
+    warnaInfo: '#ffffff',
+    bgInfo: '#101a2b'
   },
 
   onInit() {
@@ -39,7 +45,7 @@ export default {
     // runtime liteWearable (gejala bila lolos: layar blank hitam).
     try {
       // Daftarkan konteks halaman → memungkinkan deteksi alarm Metode B
-      // lewat JALUR 3 (this.requireNapi('hmAlarm')) pada sebagian SDK.
+      // lewat jalur this.requireNapi('hmAlarm') pada sebagian SDK.
       daftarkanKonteksAlarm(this);
       this.refresh();
     } catch (e) {
@@ -80,68 +86,53 @@ export default {
     this.tidakTersedia = !st.tersedia;
 
     if (st.tersedia) {
-      // Kartu berikutnya
+      // Kartu "Menuju ..." — label & jam sejajar satu baris, countdown di
+      // baris kedua (jam sudah diperkecil di CSS agar tidak menutupi).
       if (st.berikutnya) {
         this.pesanNext = 'Menuju ' + st.berikutnya.nama + (st.berikutnya.besok ? ' (besok)' : '');
         this.waktuBerikutnya = st.berikutnya.waktu;
         this.sisaWaktu = hitungSisa(st.berikutnya.selangMenit);
       } else {
-        this.pesanNext = 'Menuju —';
+        this.pesanNext = 'Semua selesai';
         this.waktuBerikutnya = '--:--';
         this.sisaWaktu = 'Jadwal hari ini selesai';
       }
 
-      // GRID 5 waktu + penanda status. PENTING (LiteWearable): class selector
-      // tidak mendukung data binding → warna per-status dibawa lewat field
-      // yang di-binding langsung ke atribut tag tunggal di HML.
+      // GRID 5 waktu sholat + penanda status via WARNA LATAR saja (kelas
+      // statis; binding ke atribut tag tunggal — aturan LiteWearable).
       var daftar = [];
       for (var i = 0; i < st.daftar.length; i++) {
         var it = st.daftar[i];
         var t = temaStatus(it.status);
         daftar.push({
           nama: it.nama,
-          waktu: it.waktu || '--:--',
+          waktu: it.waktu || '--:--',   // JAM SELALU DITAMPILKAN di tiap kotak
           status: it.status,
-          penanda: penandaStatus(it),
           bg: t.bg,
-          rim: t.rim,
-          dome: t.dome,
           warnaTeks: t.teks,
-          warnaJam: t.jam,
-          warnaPenanda: t.penanda
+          warnaJam: t.jam
         });
       }
       this.jadwal = daftar;
 
-      // Sel pengingat: SATU string ringkas, selalu terisi (tidak pernah lagi
-      // menampilkan pesan panjang 'modul alarm tak tersedia'). Warna kaca
-      // mengikuti status Metode B: hijau = alarm sistem aktif, kuning =
-      // sedang disiapkan otomatis, biru redup = hanya Metode A.
-      try {
-        var s = teksStatusPengingat();
-        this.ringkasAlarm = ringkasStatus(s);
-        if (s.indexOf('harian') >= 0 || s.indexOf('aktif:') >= 0) {
-          this.warnaAlarm = '#7fdca4';
-          this.bgAlarm = '#0d1a14'; this.rimAlarm = '#2e6b4c'; this.domeAlarm = '#3ddc84';
-        } else if (s.indexOf('disiapkan') >= 0 || s.indexOf('siap') >= 0) {
-          this.warnaAlarm = '#ffd166';
-          this.bgAlarm = '#1a1508'; this.rimAlarm = '#6b5a2e'; this.domeAlarm = '#c9a13d';
-        } else {
-          this.warnaAlarm = '#9ed4ff';
-          this.bgAlarm = '#101a2b'; this.rimAlarm = '#2a3a52'; this.domeAlarm = '#3d5a86';
-        }
-      } catch (e) {
-        this.ringkasAlarm = 'Aktif';
-        this.warnaAlarm = '#9fb0c3';
+      // Kotak ke-6: ringkasan sholat berikutnya (pengganti box pengingat).
+      if (st.berikutnya) {
+        this.infoTeks = st.berikutnya.nama + ' ' + st.berikutnya.waktu;
+        this.warnaInfo = '#ffd166';
+        this.bgInfo = '#1a1508';
+      } else {
+        this.infoTeks = 'Selesai';
+        this.warnaInfo = '#9fb0c3';
+        this.bgInfo = '#101a2b';
       }
     } else {
       this.jadwal = [];
       this.pesanNext = '';
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
-      this.ringkasAlarm = 'H-10 mnt';
-      this.warnaAlarm = '#9fb0c3';
-      this.bgAlarm = '#101a2b'; this.rimAlarm = '#2a3a52'; this.domeAlarm = '#3d5a86';
+      this.infoTeks = '--:--';
+      this.warnaInfo = '#9fb0c3';
+      this.bgInfo = '#101a2b';
     }
   }
 };
@@ -149,35 +140,21 @@ export default {
 /* ----------------------------- fungsi kecil ------------------------------- */
 function pad2(n) { return (n < 10 ? '0' + n : '' + n); }
 
-/** ✓ lewat | ▶ berlangsung/masuk waktu | ➜ berikutnya/mendatang */
-function penandaStatus(it) {
-  if (it.status === 'lewat') return '✓';
-  if (it.status === 'berlangsung') return '▶';
-  return '➜';
-}
-
-/** Palet per-status utk kartu kaca grid (binding atribut, bukan kelas).
-    `rim` = warna border tipis tepi kaca. */
+/** Palet per-status utk kotak grid (binding atribut background-color/color,
+    BUKAN kelas — aturan LegacyCompileLiteJS). Semua varian kontras penuh:
+    nama & JAM selalu mudah dibaca; hanya tingkat kecerahan latar yang
+    membedakan status (tidak ada lagi garis/centang pengganggu). */
 function temaStatus(status) {
   if (status === 'lewat') {
-    // kaca redup agar fokus pada waktu yang tersisa
-    return { bg: '#0a0e15', rim: '#1d2530', dome: '#2a3644', teks: '#8b95a1', jam: '#67707b', penanda: '#67707b' };
+    // sudah lewat → latar paling gelap, teks tetap jelas terbaca
+    return { bg: '#0c1119', teks: '#aab4c0', jam: '#c3ccd6' };
   }
   if (status === 'berlangsung') {
-    // masa H-10 menit menjelang masuk waktu (kaca hijau)
-    return { bg: '#103524', rim: '#3ddc84', dome: '#4fe08f', teks: '#dff7e7', jam: '#7fdca4', penanda: '#6ee7a0' };
+    // masa H-10 menit menjelang masuk waktu → aksen hijau lembut
+    return { bg: '#103524', teks: '#dff7e7', jam: '#8ef0b8' };
   }
-  // berikutnya / mendatang — kaca biru seperti kartu utama
-  return { bg: '#152a45', rim: '#4a6fa5', dome: '#55719a', teks: '#eaf1f8', jam: '#ffffff', penanda: '#9ed4ff' };
-}
-
-/** Ringkas teks status pengingat jadi label pendek utk sel grid (≤ ~10 char) */
-function ringkasStatus(s) {
-  if (!s) return 'Aktif';
-  if (s.indexOf('harian') >= 0) return 'Alarm harian';
-  if (s.indexOf('siap') >= 0) return 'Alarm siap';
-  if (s.indexOf('disiapkan') >= 0) return 'Menyiapkan…';
-  return 'Pengingat aktif';
+  // berikutnya / mendatang → biru standar
+  return { bg: '#152a45', teks: '#eaf1f8', jam: '#ffffff' };
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */
