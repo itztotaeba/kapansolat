@@ -45,14 +45,16 @@
        Lima kotak: Subuh|Zuhur / Ashar|Maghrib / Isya.
        Tiap kotak menampilkan NAMA + JAM masuknya dengan kontras penuh.
 
-       Catatan teknis: warna per-status via binding atribut tag tunggal
-       ($item.bg = background-color kartu, $item.warna = warna jam) —
-       BUKAN binding pada class (ditolak LegacyCompileLiteJS), dan
-       BUKAN atribut kustom lines/text-overflow (memicu warning). -->
+       Catatan teknis PENTING (hasil build DevEco pengguna):
+       LegacyCompileLiteJS MELARANG data binding di atribut `class` dalam
+       bentuk APA pun, termasuk satu token variabel sederhana.
+       Maka warna per-status dibawa lewat ATRIBUT TAG TUNGGAL dengan binding
+       (background-color / color) yang nilainya disiapkan JavaScript — pola
+       resmi liteWearable. Tidak ada atribut kustom lines/text-overflow. -->
   <div class="grid" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" tid="id" class="sel {{ $item.kelas }}">
-      <text class="sel-nama {{ $item.kelasNama }}">{{ $item.nama }}</text>
-      <text class="sel-jam {{ $item.kelasJam }}">{{ $item.waktu }}</text>
+    <div for="{{ jadwal }}" tid="id" class="sel" background-color="{{ $item.bg }}">
+      <text class="sel-nama" color="{{ $item.warnaNama }}">{{ $item.nama }}</text>
+      <text class="sel-jam" color="{{ $item.warna }}">{{ $item.waktu }}</text>
     </div>
   </div>
 
