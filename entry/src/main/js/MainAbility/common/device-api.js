@@ -149,6 +149,11 @@ export function alarmTersedia() {
   return !!hmAlarm;
 }
 
+/** Jumlah alarm yang berhasil dipasang pada pemanggilan terakhir. */
+var _terakhirDipasang = 0;
+export function setJumlahAlarmTerpasang(n) { _terakhirDipasang = n; }
+export function jumlahAlarmTerpasang() { return _terakhirDipasang; }
+
 /**
  * METODOLOGI PEMASANGAN ULANG OTOMATIS:
  * Daftar `kejadian` (dari waktu.js.kejadianPengingat) diubah menjadi alarm
@@ -170,6 +175,7 @@ export function pasangDeretAlarm(kejadian) {
     var label = '⏰ ' + ev.nama + ' ' + ev.masuk + ' (' + ev.tanggalKey + ')';
     if (pasangAlarm(delayDetik, label, true)) count++;
   }
+  setJumlahAlarmTerpasang(count);
   console.info('[device-api] pasangDeretAlarm: ' + count + ' alarm terpasang');
   return count;
 }

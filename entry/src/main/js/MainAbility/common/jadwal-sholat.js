@@ -51,4 +51,18 @@ export const JADWAL_SHOLAT = [
 
 /* ==================== KONSTANTA PENGINGAT (boleh diubah) ================== */
 // Berapa menit SEBELUM waktu sholat pengingat berbunyi.
-export const MENIT_SEBELUM = 10;
+// Nilai ini dipakai OLEH KEDUA METODE sekaligus:
+//   - Metode A (saat aplikasi terbuka): jendela pemicuan notifikasi+getar.
+//   - Metode B (alarm sistem hmAlarm): hitungan mundur delay alarm.
+// Ganti angka di bawah bila ingin pengingat lebih awal (mis. 15), lalu
+// build & install ulang — alarm otomatis tersusun ulang saat app dibuka.
+export var MENIT_SEBELUM = 10;
+
+/** Ubah jendela pengingat saat runtime (dipakai dari layar pengaturan). */
+export function setMenitSebelum(n) {
+  n = parseInt(n, 10);
+  if (isNaN(n) || n < 1) n = 10;
+  if (n > 120) n = 120; // batas waras 2 jam
+  MENIT_SEBELUM = n;
+  return MENIT_SEBELUM;
+}
