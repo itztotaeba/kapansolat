@@ -22,22 +22,28 @@ waktu berikutnya, dan mengingatkan **10 menit sebelum sholat** dengan dua metode
   tepat 10 menit menuju suatu waktu sholat → notifikasi layar + getar.
 - **Metode B**: alarm sistem (`hmAlarm`) untuk sisa kejadian hari ini + besok
   langsung didaftarkan ulang secara otomatis (getaran + label mis.
-  `⏰ Ashar 15:09 (2026-10-14)`). Alarm ini tetap berbunyi walau aplikasi ditutup.
+  `⏰ Ashar 10 menit lagi · masuk 15:09`). Alarm ini tetap berbunyi walau aplikasi ditutup.
 - Pemasangan alarm dicoba OTOMATIS terus: saat app dibuka, setiap pergantian
   hari, dan setiap siklus 30 detik selama app terbuka sampai modul `hmAlarm`
   berhasil dideteksi (tidak perlu buka-tutup app bila runtime mendaftarkan
   modulnya belakangan). Sekali terpasang hari itu, tidak ada pekerjaan ulang.
+- Perbaikan bug alarm "tidak pernah berjalan" pada versi sebelumnya:
+  1) modul hmAlarm kini dicari lewat 4 jalur aman (global.hmAlarm → jembatan
+     import '@ohos.hmAlarm' → this.requireNapi('hmAlarm') → @system.alarm);
+  2) field trigger memakai `hour`/`minute` LOBAL hasil perhitungan waktu.js
+     (bukan delay NaN dari properti yang tidak ada — penyebab lama firmware
+     menolak seluruh permintaan alarm), plus field `time`/`delay` utk varian
+     SDK lain; 3) kapasitas dijaga maks 10 alarm (sisa hari ini + besok).
 - Jumlah menit sebelum sholat bisa diubah di satu tempat:
   `MENIT_SEBELUM` pada `common/jadwal-sholat.js` (default 10) — dipakai oleh
   KEDUA metode sekaligus.
-- Karena alarm liteWearable bersifat one-shot dengan kapasitas ±10, biasakan
-  membuka aplikasi minimal sekali sehari (mis. setelah Subuh) agar alarm hari
-  berikutnya terpasang ulang.
-- Status pengingat ditampilkan ringkas di kartu paling bawah layar utama,
-  contoh: `⚙ Alarm sistem aktif: 8× H-10 mnt (global.hmAlarm)`. Pesan lama
-  "modul alarm tak tersedia" DIHAPUS — hmAlarm dicari otomatis lewat 4 jalur
-  dan tidak pernah menampilkan pesan kegagalan. Diagnostik lengkap di log:
-  `hdc shell hilog | grep alarm`
+- Karena sebagian SDK liteWearable hanya mendukung alarm one-shot dengan
+  kapasitas ±10, biasakan membuka aplikasi minimal sekali sehari (mis. setelah
+  Subuh) agar alarm hari berikutnya terpasang ulang otomatis.
+- Status pengingat ditampilkan ringkas pada SEL KECIL ke-6 di grid layar utama
+  (hijau = alarm sistem aktif, kuning = sedang disiapkan otomatis). Pesan lama
+  "modul alarm tak tersedia" DIHAPUS. Diagnostik lengkap di log:
+  `hdc shell hilog | grep device-api` atau `grep alarm`
 
 ## 📁 Struktur Proyek (mengikuti template default DevEco Studio)
 ```

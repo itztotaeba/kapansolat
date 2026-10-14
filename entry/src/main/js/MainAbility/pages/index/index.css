@@ -1,26 +1,13 @@
 /* ==========================================================================
-   index.css — REDSIGN "SEMUA DALAM BOX" (liquid-glass per kartu)
+   index.css — GRID 2 KOLOM, SETIAP SEL DALAM KOTAK SENDIRI (liquid glass)
    ==========================================================================
-   Target: Huawei Watch GT 7 Pro, panel 454x454 px. liteWearable memakai dp
-   dengan skala ~1,875 → area pakai ≈ 242 x 242 dp. SEMUA tinggi/lebar blok
-   ditulis EKSPISIT dan total vertikal dikunci ≤ 242dp sehingga TIDAK ADA
-   baris kosong / elemen terpotong seperti laporan sebelumnya:
-
-     y=6    [BOX tanggal]        h50  + gap 6
-     y=62   [BOX menuju]         h74  + gap 6
-     y=142  [Subuh ] h32 +gap4 → step 36 ×5 = 180
-     y=178  [Zuhur ]
-     y=214  [Ashar ]            daftar s/d y=210
-     y=250* [Maghrib]           *karena scroll ringan, daftar boleh sedikit
-     y=...  [Isya ]               melewati lipatan; status alarm di bawah
-     lalu   [BOX status alarm] h30
-
-   Prinsip LiteWearable yang dipatuhi:
-     - tanpa properti non-standar (ukuran px langsung);
-     - tanpa gradien/animasi berat → hemat baterai AMOLED;
-     - efek kaca = panel solid gelap + rim border + "dome" highlight lengkung
-       absolute di tepi atas setiap box — berlaku untuk SEMUA box, termasuk
-       tiap baris waktu sholat (permintaan liquid-glass per baris).
+   Panel GT 7 Pro 454x454 px ≈ area pakai 242x242 dp. Semua tinggi/lebar
+   EKSPISIT sehingga tidak ada baris kosong tak jelas:
+     y=6    [tanggal ] h46  + gap 6
+     y=58   [menuju  ] h64  + gap 6
+     y=128  [grid 3x2] h110 (3 × 34dp + gap 4)
+   Prinsip hemat baterai AMOLED: tanpa gradien/animasi; efek kaca = panel
+   solid gelap + rim border + dome highlight lengkung di tepi atas tiap sel.
    ========================================================================== */
 
 .container {
@@ -28,25 +15,25 @@
   height: 100%;
   flex-direction: column;
   align-items: center;
-  background-color: #04060b;      /* dasar AMOLED hitam */
+  background-color: #04060b;
   padding: 6px 8px;
 }
 
-/* ---------- gaya KOTAK umum (dipakai semua elemen) ---------- */
+/* ---------- gaya KOTAK umum ---------- */
 .box {
-  width: 226px;                   /* 242 - padding kiri/kanan */
+  width: 226px;
   border-radius: 16px;
   border-width: 1px;
-  border-color: #2a3a52;          /* rim default */
-  background-color: #101a2b;      /* panel default */
-  position: relative;             /* anchor lapisan "dome" kaca */
+  border-color: #2a3a52;
+  background-color: #101a2b;
+  position: relative;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-bottom: 6px;             /* jarak seragam antar box */
+  margin-bottom: 6px;
 }
 
-/* Lapisan highlight lengkung khas kaca — di tepi ATAS setiap box */
+/* dome highlight khas kaca — tepi ATAS box besar */
 .dome {
   position: absolute;
   left: 20px;
@@ -60,11 +47,11 @@
 
 /* ==================== BOX 1: TANGGAL & JAM ==================== */
 .box-tanggal {
-  height: 50px;
+  height: 46px;
   border-color: #223048;
   background-color: #0b1220;
 }
-.t-glav {                          /* tanggal Indonesia */
+.t-glav {
   width: 218px;
   font-size: 11px;
   color: #9fb0c3;
@@ -72,25 +59,25 @@
   lines: 1;
   text-overflow: ellipsis;
 }
-.t-jam {                           /* jam sistem HH:MM */
+.t-jam {
   width: 218px;
-  font-size: 20px;
+  font-size: 18px;
   color: #ffffff;
   text-align: center;
   margin-top: 1px;
   lines: 1;
 }
 
-/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (glass besar) ============ */
+/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============ */
 .box-next {
-  height: 74px;
+  height: 64px;
   border-radius: 20px;
   border-color: #4a6fa5;
   background-color: #16283f;
 }
 .t-next-label {
   width: 218px;
-  font-size: 12px;
+  font-size: 11px;
   color: #9ed4ff;
   text-align: center;
   lines: 1;
@@ -98,7 +85,7 @@
 }
 .t-next-waktu {
   width: 218px;
-  font-size: 24px;
+  font-size: 22px;
   color: #ffffff;
   text-align: center;
   margin-top: 1px;
@@ -106,7 +93,7 @@
 }
 .t-next-sisa {
   width: 218px;
-  font-size: 12px;
+  font-size: 11px;
   color: #ffd166;
   text-align: center;
   margin-top: 2px;
@@ -116,7 +103,7 @@
 
 /* ==================== BOX: jadwal belum diisi ==================== */
 .box-kosong {
-  height: 74px;
+  height: 64px;
   border-color: #5a2f3a;
   background-color: #1d1015;
 }
@@ -129,67 +116,65 @@
   text-overflow: ellipsis;
 }
 
-/* ============ DAFTAR: 5 KARTU WAKTU SHOLAT (box per baris) ============ */
-.daftar {
+/* ============ GRID 2 KOLOM: SEL WAKTU SHOLAT + PENGINGAT ============ */
+.grid {
   width: 226px;
-  height: 180px;                  /* 5 x (32 + 4 margin) = eksplisit */
-  flex-direction: column;
+  height: 110px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
-.baris {
-  /* kelas STATIS; warna per-status via binding atribut di HML. */
+.sel {
+  /* SATU KOTAK KACA PER ITEM: penanda + nama + jam */
+  width: 110px;
+  height: 34px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: #4a6fa5;          /* default; ditimpa binding per-status */
+  background-color: #152a45;      /* default; ditimpa binding per-status */
+  position: relative;
   flex-direction: row;
   align-items: center;
-  height: 32px;
-  width: 226px;
-  border-radius: 12px;
-  padding: 0 10px;
   margin-bottom: 4px;
 }
-/* dome tipis khusus kartu baris — liquid glass di SETIAP waktu sholat */
-.baris-dome {
+/* dome tipis khas liquid-glass di tepi atas SETIAP sel */
+.sel-dome {
   position: absolute;
-  left: 12px;
+  left: 8px;
   top: 2px;
-  width: 140px;
-  height: 6px;
-  border-radius: 4px;
+  width: 70px;
+  height: 5px;
+  border-radius: 3px;
+  background-color: #55719a;
   opacity: 0.30;
 }
-.t-penanda {
-  width: 22px;
-  font-size: 13px;
+.sel-penanda {
+  width: 16px;
+  font-size: 11px;
   text-align: center;
   lines: 1;
+  color: #9ed4ff;                 /* default; ditimpa binding */
 }
-.t-nama {
-  width: 130px;
-  font-size: 14px;
+.sel-nama {
+  width: 46px;
+  font-size: 12px;
   lines: 1;
   text-overflow: ellipsis;
+  color: #eaf1f8;                 /* default; ditimpa binding */
 }
-.t-waktu {
-  width: 52px;
-  font-size: 14px;
+.sel-jam {
+  width: 44px;
+  font-size: 13px;
   text-align: right;
   lines: 1;
+  color: #ffffff;                 /* default; ditimpa binding */
 }
-
-/* Warna DEFAULT (status mendatang) — ditimpa binding atribut per item */
-.t-penanda { color: #9ed4ff; }
-.t-nama, .t-waktu { color: #eaf1f8; }
-
-/* ==================== BOX 8: STATUS PENGINGET ==================== */
-.box-alarm {
-  height: 44px;                   /* dua baris → teks status tidak terpotong */
-  border-color: #234034;
-  background-color: #0d1a14;
-  margin-bottom: 0;
-}
-.t-alarm {
-  width: 206px;
+.sel-jam-kecil {
   font-size: 10px;
-  text-align: center;
-  lines: 2;                       /* sempat 1 baris + ellipsis → '...' membingungkan */
-  text-overflow: ellipsis;
-  color: #7fdca4;                 /* default; diganti binding `warnaAlarm` */
+}
+
+/* sel ke-6 (pengingat): warna default hijau gelap (ditimpa binding) */
+.sel-alarm {
+  background-color: #0d1a14;
+  border-color: #234034;
 }

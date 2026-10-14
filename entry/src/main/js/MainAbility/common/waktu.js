@@ -167,25 +167,26 @@ export function statusHariIni(now) {
 }
 
 /**
- * Kumpulan kejadian pengingat H-10 menit mulai saat `now` sampai akhir hari BESOK.
- * Dipakai oleh Metode A (cek berkala) dan Metode B (alarm sistem).
+ * Kumpulan kejadian pengingat H-`menitSebelum` menit mulai hari ini sampai
+ * akhir BESOK (maksimal 10 — batas kapasitas alarm liteWearable).
+ * Dipakai oleh Metode A (cek berkala dalam aplikasi) dan Metode B (alarm
+ * sistem hmAlarm harian).
  *
- * Perhitungan memakai EPOCH-MENIT absolut (menit sejak 1 Jan 1970 UTC):
- *   epochMenit(d) = Math.floor(d.getTime() / 60000)
- * Karena jam & tanggal dibuat dari objek Date yang SAMA (zona waktu lokal),
- * selisih epoch-menit selalu akurat — bahkan saat melewati tengah malam,
- * pergantian bulan, atau perubahan DST. Ini menghindari jebakan umum
- * "menit-siang-malam" yang salah bila tanggal record ≠ tanggal sistem.
+ * Karena Metode B memakai alarm REPEAT-HARIAN (hour+minute lokal, bukan
+ * hitung mundur epoch), yang dibutuhkan tiap kejadian adalah:
+ *   triggerJam        : jam LOCAL saat alarm harus berbunyi (0..23)
+ *   triggerMenitLokal : menit LOCAL (0..59)
+ *   selangMenit       : perkiraan menit menuju trigger dari `now` (Metode A)
+ * Perhitungan selang memakai EPOCH-MENIT absolut agar akurat lintas tengah
+ * malam / ganti bulan / DST.
  *
- * Mengembalikan array terurut terdekat-dulu:
- * { id, tanggalKey, waktuKey, nama, masuk:'JJ:MM', triggerMenit }
- * triggerMenit = berapa MENIT lagi alarm harus berbunyi (>= 0).
+ * Mengembalikan array terurut terdekat-dulu.
  */
 export function kejadianPengingat(now, menitSebelum) {
   var keluar = [];
   var nowEpoch = Math.floor(now.getTime() / 60000);
 
-  // helper: epoch-menit utk 'JJ:MM' pada hari objek Date tertentu (waktu lokal)
+  // helper: epoch-menit utk 'JJ:MM' pada hari objek Date tertentu (lokal)
   function epochMenitPada(dHari, strWaktu) {
     var mt = timeToMenit(strWaktu);
     if (mt < 0) return -1;
@@ -206,21 +207,37 @@ export function kejadianPengingat(now, menitSebelum) {
     if (!hr.rec) continue;
     for (var i = 0; i < DAFTAR_WAKTU.length; i++) {
       var k = DAFTAR_WAKTU[i];
+      var mtMasuk = timeToMenit(hr.rec[k]);
+      if (mtMasuk < 0) continue;
       var em = epochMenitPada(hr.d, hr.rec[k]);
-      if (em < 0) continue;
-      var trigger = (em - menitSebelum) - nowEpoch; // menit menuju alarm dr sekarang
-      if (trigger < 0) continue;                    // sudah terlewat, lewati
+      var selang = (em - menitSebelum) - nowEpoch; // menit menuju trigger dr sekarang
+      // Jam/menit LOCAL trigger = waktu masuk dikurangi menitSebelum.
+      // Alarm bersifat repeat-harian, jadi nilai "sudah lewat hari ini" pun
+      // tetap valid (berbunyi besok pada jam yang sama) → TIDAK dilewati.
+      var trigAbs = mtMasuk - menitSebelum;
+      var wrap = trigAbs < 0;                       // melewati tengah malam (Subuh)
+      var trigNorm = ((trigAbs % 1440) + 1440) % 1440;
+      // Untuk Subuh, selang versi "besok" bila trigger hari ini sudah lewat
+      if (selang < 0) selang += 1440;
       keluar.push({
         id: hr.key + '-' + k,
         tanggalKey: hr.key,
         waktuKey: k,
         nama: NAMA_TAMPIL[k],
         masuk: hr.rec[k],
-        triggerMenit: trigger
+        menitSebelum: menitSebelum,
+        triggerJam: Math.floor(trigNorm / 60),
+        triggerMenitLokal: trigNorm % 60,
+        /* ALIAS untuk kompatibilitas pemanggil lama (device-api.js versi
+           PR#7 memakai ev.triggerMenit sebagai delay-menit Metode A). */
+        triggerMenit: selang >= 0 ? selang : 0,
+        lewatiTengahMalam: wrap,
+        selangMenit: selang
       });
     }
   }
-  // urutkan berdasarkan waktu trigger terdekat
-  keluar.sort(function (a, b) { return a.triggerMenit - b.triggerMenit; });
+  // urutkan berdasarkan waktu trigger terdekat, batasi kapasitas alarm
+  keluar.sort(function (a, b) { return a.selangMenit - b.selangMenit; });
+  if (keluar.length > 10) keluar = keluar.slice(0, 10);
   return keluar;
 }

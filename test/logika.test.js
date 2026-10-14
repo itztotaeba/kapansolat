@@ -55,12 +55,29 @@ const st3 = ctx.statusHariIni(new Date(2026, 9, 14, 21, 0));
 eq('besok flag', st3.berikutnya.besok, true);
 eq('besok subuh', st3.berikutnya.waktu, '04:31');
 
-// Kejadian pengingat: pada 13:54, Ashar trigger = 75-10 = 65 menit lagi
+// Kejadian pengingat (alarm HARIAN repeat): pada 13:54, Ashar 15:09 ->
+// trigger lokal 14:59, selang 65 menit dari sekarang.
 const ev = ctx.kejadianPengingat(new Date(2026, 9, 14, 13, 54), 10);
 const evAshar = ev.filter(e => e.waktuKey === 'ashar')[0];
-eq('trigger Ashar 65', evAshar.triggerMenit, 65);
+eq('selang Ashar 65', evAshar.selangMenit, 65);
+eq('jam trigger Ashar 14', evAshar.triggerJam, 14);
+eq('menit trigger Ashar 59', evAshar.triggerMenitLokal, 59);
 eq('label id', evAshar.id, '2026-10-14-ashar');
-eq('sorted asc', ev[0].triggerMenit <= ev[ev.length - 1].triggerMenit, true);
+eq('sorted asc', ev[0].selangMenit <= ev[ev.length - 1].selangMenit, true);
+eq('maks 10 alarm', ev.length <= 10, true);
+
+// Subuh 04:31 - 10 mnt = 04:21 (tidak melewati tengah malam)
+const subuhData = { subuh: '00:05' }; // uji wrap tengah-malam via fungsi internal:
+const evSore = ctx.kejadianPengingat(new Date(2026, 9, 14, 21, 0), 10);
+const evSubuhBesok = evSore.filter(e => e.waktuKey === 'subuh')[0];
+eq('Subuh jam 4 menit 21', [evSubuhBesok.triggerJam, evSubuhBesok.triggerMenitLokal], [4, 21]);
+
+// Wrap tengah malam: waktu 00:05 - 10 = 23:55 (const array -> pakai vm eval)
+vm.runInContext("JADWAL_SHOLAT.length = 0; JADWAL_SHOLAT.push({ tanggal: '2026-12-20', subuh: '00:05', zuhur: '12:00', ashar: '15:00', maghrib: '18:00', isya: '19:00' });", ctx);
+const evWrap = ctx.kejadianPengingat(new Date(2026, 11, 20, 10, 0), 10);
+const w = evWrap.filter(e => e.waktuKey === 'subuh')[0];
+eq('wrap 23:55', [w.triggerJam, w.triggerMenitLokal], [23, 55]);
+eq('wrap flag', w.lewatiTengahMalam, true);
 
 console.log(gagal === 0 ? '\nSEMUA UJI LULUS ✅' : `\n${gagal} UJI GAGAL ❌`);
 process.exit(gagal === 0 ? 0 : 1);
