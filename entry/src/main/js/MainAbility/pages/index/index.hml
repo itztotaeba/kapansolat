@@ -4,10 +4,17 @@
   ============================================================================
   Struktur:
     1. Tanggal hari ini (format Indonesia, dari jam sistem) + jam saat ini
-    2. Kartu "menuju sholat berikutnya" + hitung mundur sisa waktu
-    3. Daftar 5 waktu sholat dengan penanda status:
+    2. Kartu utama gaya "liquid glass" (kaca iOS 26): sholat berikutnya +
+       hitung mundur. Efek kaca = lapisan div bertumpuk + border-radius besar
+       + opacity — TANPA animasi, hemat baterai.
+    2b. Kartu status Metode B (alarm sistem) + jendela pengingat aktif
+    3. Daftar 5 waktu sholat sebagai kartu-kartu kecil dengan penanda status:
          ✓ = sudah lewat (redup) | ▶ = berlangsung | ➜ = berikutnya/mendatang
-  Desain minimalis hemat daya: tanpa animasi, warna solid, teks besar.
+  CATATAN KOMPILER/RUNTIME LiteWearable yang dipatuhi file ini:
+    - class selector TIDAK mendukung data binding → kelas selalu statis.
+    - binding `style="..."` tidak didukung runtime → pakai atribut tag tunggal
+      (`color`, `background-color`, `border-color`, `opacity`).
+    - semua blok diberi ukuran px eksplisit di CSS (runtime tidak mengenal auto).
   ============================================================================
 -->
 <div class="container">
@@ -18,8 +25,10 @@
     <text class="jam">{{ jamSekarang }}</text>
   </div>
 
-  <!-- ===== 2. KARTU MENUJU SHOLAT BERIKUTNYA ===== -->
+  <!-- ===== 2. KARTU UTAMA "LIQUID GLASS": MENUJU SHOLAT BERIKUTNYA ===== -->
   <div class="kartu-next" if="{{ tersedia }}">
+    <div class="glass-band"></div>
+    <div class="glass-dome"></div>
     <text class="next-label">Menuju {{ namaBerikutnya }}</text>
     <text class="next-waktu">{{ waktuBerikutnya }}</text>
     <text class="next-sisa">⏳ {{ sisaWaktu }}</text>
@@ -30,22 +39,14 @@
     <text class="kosong-teks">Jadwal belum tersedia. Isi blok data di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ===== 3. DAFTAR 5 WAKTU SHOLAT =====
-       CATATAN KOMPILER LiteWearable:
-       - class selector TIDAK mendukung data binding, jadi `class="baris {{ ... }}"`
-         akan ERROR saat LegacyCompileLiteJS. Solusi: kelas baris bersifat statis
-         dan warna/opacity per-status dibawa lewat ATRIBUT TAG tunggal
-         (`color`, `background-color`, `opacity`) — bukan lewat `style=` maupun
-         pergantian kelas.
-       - Nilai opacity dikirim sebagai STRING dari index.js — runtime liteWearable
-         lebih andal menerima nilai atribut berupa string.
-       - `<list>`/`<list-item>` juga punya keterbatasan gaya per-item; karena hanya
-         ada 5 baris, dipakai `<div>` + `for` biasa (tanpa virtual list). -->
+  <!-- ===== 2b. KARTU STATUS PENGINGAT (Metode B) ===== -->
+  <div class="kartu-alarm" if="{{ tersedia }}">
+    <text class="alarm-teks">{{ statusAlarm }}</text>
+  </div>
+
+  <!-- ===== 3. DAFTAR 5 WAKTU SHOLAT (kartu glass per baris) ===== -->
   <div class="daftar" if="{{ tersedia }}">
-    <!-- CATATAN: binding atribut `style="..."` TIDAK didukung runtime liteWearable
-         (dulu menjadi penyebab layar blank). Atribut yang di-binding harus berupa
-         atribut tunggal seperti `color`, `background-color`, `opacity`. -->
-    <div for="{{ jadwal }}" class="baris" background-color="{{ $item.bg }}" opacity="{{ $item.opacity }}">
+    <div for="{{ jadwal }}" class="baris" background-color="{{ $item.bg }}" border-color="{{ $item.rim }}" opacity="{{ $item.opacity }}">
       <text class="penanda" color="{{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
       <text class="nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
       <text class="waktu" color="{{ $item.warnaTeks }}">{{ $item.waktu }}</text>

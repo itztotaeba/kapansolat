@@ -24,7 +24,7 @@
 
 import { MENIT_SEBELUM } from './jadwal-sholat.js';
 import { tanggalKey, kejadianPengingat, formatSelang } from './waktu.js';
-import { getar, tampilkanNotifikasi, pasangDeretAlarm } from './device-api.js';
+import { getar, tampilkanNotifikasi, pasangDeretAlarm, alarmTersedia, jumlahAlarmTerpasang } from './device-api.js';
 
 var INTERVAL_MS = 30 * 1000; // cek tiap 30 detik — cukup & hemat daya
 
@@ -115,6 +115,14 @@ export function pasangUlangAlarmSistem() {
 export function aktifkanSemuaMetode() {
   mulaiPemantauan();
   pasangUlangAlarmSistem();
+}
+
+/**
+ * Status Metode B untuk ditampilkan di kartu layar utama.
+ * { tersedia: boolean (modul hmAlarm ada?), dipasang: number (alarm aktif) }
+ */
+export function statusAlarmSistem() {
+  return { tersedia: alarmTersedia(), dipasang: jumlahAlarmTerpasang() };
 }
 
 /** Util: teks "x menit/y jam lagi" utk debug/log. */

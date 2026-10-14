@@ -11,7 +11,7 @@ const base = path.join(__dirname, '..', 'entry', 'src', 'main', 'js', 'MainAbili
 // Muat jadwal-sholat.js dan waktu.js dengan transform import/export -> global sederhana
 function muat(file, ctx) {
   let src = fs.readFileSync(path.join(base, file), 'utf8');
-  src = src.replace(/export\s+(const|function)/g, '$1')
+  src = src.replace(/export\s+(const|var|function)/g, '$1')
             .replace(/import\s*\{([^}]*)\}\s*from\s*'[^']*';?/g, '');
   vm.runInContext(src, ctx);
 }

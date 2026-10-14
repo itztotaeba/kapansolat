@@ -1,27 +1,30 @@
 /* ==========================================================================
-   index.css — Gaya layar utama. Tema gelap OLED: hemat baterai, kontras
-   tinggi, mudah dibaca sekilas di layar kecil jam. Tanpa animasi/gambar berat.
+   index.css — Gaya layar utama. Tema gelap OLED + kartu "liquid glass"
+   (gaya kaca iOS 26): panel translusen dengan border tipis bergradasi dan
+   highlight lengkung di tepi atas. TANPA animasi/bayi berat → hemat baterai.
    ========================================================================== */
 
 .container {
   width: 100%;
   height: 100%;
   flex-direction: column;
-  background-color: #000000;
+  background-color: #05070d;
   padding: 8px 6px;
 }
 
 /* ---------- Header tanggal & jam ---------- */
 .header {
-  width: 100%;                /* LiteWearable: div tanpa ukuran eksplisit bisa ter-layout 0px */
+  width: 100%;
+  height: 52px;               /* LiteWearable: tinggi eksplisit */
   flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .tanggal {
   width: 100%;
-  font-size: 15px;
-  color: #9aa0a6;
+  font-size: 13px;
+  color: #a9b4c0;
   text-align: center;
 }
 .jam {
@@ -29,27 +32,51 @@
   font-size: 26px;
   color: #ffffff;
   text-align: center;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
-/* ---------- Kartu menuju sholat berikutnya ---------- */
+/* ---------- KARTU UTAMA (glass) : menuju sholat berikutnya ---------- */
 .kartu-next {
   width: 100%;
-  height: 86px;           /* tinggi eksplisit: LiteWearable tidak mengenal 'auto' */
+  height: 118px;              /* tinggi eksplisit: Lite tidak mengenal 'auto' */
+  position: relative;         /* anchor untuk lapisan highlight kaca */
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 6px 4px;
-  border-radius: 10px;
-  background-color: #12243d;
+  border-radius: 20px;
+  background-color: #1a2f4d;  /* dasar translucent-glass (solid utk AMOLED) */
+  border-width: 1px;
+  border-color: #4a6fa5;      /* rim cahaya halus */
   margin-bottom: 6px;
 }
+/* Lapisan 1: pita gradasi diagonal — ilusi pantulan "liquid" */
+.glass-band {
+  position: absolute;
+  left: 0px;
+  top: 26px;
+  width: 192px;
+  height: 30px;
+  border-radius: 15px;
+  background-color: #223c60;
+  opacity: 0.55;
+}
+/* Lapisan 2: kubah terang di tepi atas — specular highlight khas kaca */
+.glass-dome {
+  position: absolute;
+  left: 12px;
+  top: 3px;
+  width: 168px;
+  height: 18px;
+  border-radius: 12px;
+  background-color: #55719a;
+  opacity: 0.45;
+}
 .next-label {
-  font-size: 14px;
-  color: #7ec8ff;
+  font-size: 13px;
+  color: #9ed4ff;
 }
 .next-waktu {
-  font-size: 24px;
+  font-size: 26px;
   color: #ffffff;
   margin-top: 1px;
 }
@@ -59,10 +86,29 @@
   margin-top: 2px;
 }
 
+/* ---------- Kartu status alarm sistem (glass kecil) ---------- */
+.kartu-alarm {
+  width: 100%;
+  height: 30px;               /* tinggi eksplisit */
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  border-radius: 14px;
+  background-color: #16233a;
+  border-width: 1px;
+  border-color: #3a5a86;
+  margin-bottom: 6px;
+}
+.alarm-teks {
+  font-size: 12px;
+  color: #8fb8e8;
+  text-align: center;
+}
+
 /* ---------- Bila jadwal belum diisi ---------- */
 .kosong {
   width: 100%;
-  height: 86px;           /* sejajar kartu next */
+  height: 118px;              /* sejajar kartu next */
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -74,10 +120,10 @@
   text-align: center;
 }
 
-/* ---------- Daftar 5 waktu sholat ---------- */
+/* ---------- Daftar 5 waktu sholat: kartu glass per baris ---------- */
 .daftar {
   width: 100%;
-  height: 185px;          /* 5 baris x 34px + margin 3px — tinggi eksplisit */
+  height: 190px;              /* 5 baris x 35px + margin 3px — tinggi eksplisit */
   flex-direction: column;
 }
 .baris {
@@ -86,9 +132,10 @@
   flex-direction: row;
   align-items: center;
   width: 100%;
-  height: 34px;
-  padding: 0 6px;
-  border-radius: 8px;
+  height: 35px;
+  padding: 0 8px;
+  border-radius: 12px;        /* sudut membulat khas kartu kaca */
+  border-width: 1px;          /* rim tipis; warnanya per-baris via atribut */
   margin-bottom: 3px;
 }
 .penanda {
@@ -97,7 +144,7 @@
   text-align: center;
 }
 .nama {
-  width: 120px;           /* LiteWearable: hindari 'flex' untuk ukuran — pakai px eksplisit */
+  width: 120px;               /* LiteWearable: hindari 'flex' — px eksplisit */
   font-size: 16px;
 }
 .waktu {
@@ -105,6 +152,7 @@
 }
 
 /* Warna default (status mendatang). Nilai per-baris ditimpa lewat binding
-   ATRIBUT TAG color/background-color/opacity di index.hml (bukan `style=`). */
-.penanda { color: #7ec8ff; }
-.nama, .waktu { color: #e8eaed; }
+   ATRIBUT TAG color/background-color/border-color/opacity di index.hml
+   (bukan `style=` yang tidak didukung runtime liteWearable). */
+.penanda { color: #9ed4ff; }
+.nama, .waktu { color: #eaf1f8; }

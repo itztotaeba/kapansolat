@@ -16,7 +16,8 @@
  */
 
 import { statusHariIni, formatTanggalID } from '../../common/waktu.js';
-import { aktifkanSemuaMetode, hentikanPemantauan } from '../../common/pengingat.js';
+import { aktifkanSemuaMetode, hentikanPemantauan, statusAlarmSistem } from '../../common/pengingat.js';
+import { MENIT_SEBELUM } from '../../common/jadwal-sholat.js';
 
 export default {
   data: {
@@ -27,7 +28,8 @@ export default {
     namaBerikutnya: '',
     waktuBerikutnya: '',
     sisaWaktu: '',
-    jadwal: [] // [{nama, waktu, status, penanda}]
+    statusAlarm: '',
+    jadwal: [] // [{nama, waktu, status, penanda, bg, rim, warnaTeks, warnaPenanda, opacity}]
   },
 
   onInit() {
@@ -95,17 +97,29 @@ export default {
           status: it.status,
           penanda: penandaStatus(it),
           bg: t.bg,
+          rim: t.rim,
           warnaTeks: t.teks,
           warnaPenanda: t.penanda,
           opacity: t.opacity
         });
       }
       this.jadwal = daftar;
+
+      // Status Metode B (alarm sistem) — dipasang otomatis saat app dibuka.
+      var sa = statusAlarmSistem();
+      if (sa.dipasang > 0) {
+        this.statusAlarm = '🔔 Alarm sistem: ' + sa.dipasang + ' aktif • H-' + MENIT_SEBELUM + ' menit';
+      } else if (sa.tersedia) {
+        this.statusAlarm = 'Pengingat H-' + MENIT_SEBELUM + ' menit • alarm 0 (buka app tiap hari)';
+      } else {
+        this.statusAlarm = '⚠ Modul alarm tak tersedia • pengingat hanya saat app terbuka';
+      }
     } else {
       this.jadwal = [];
       this.namaBerikutnya = '';
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
+      this.statusAlarm = '';
     }
   }
 };
@@ -120,21 +134,21 @@ function penandaStatus(it) {
   return '➜';
 }
 
-/** Palet warna per-status (dipakai binding atribut, bukan pergantian kelas —
-    karena class selector LiteWearable tidak mendukung data binding).
-    opacity dikirim sebagai STRING agar runtime liteWearable menerima tipe
-    yang paling andal untuk nilai atribut. */
+/** Palet per-status untuk kartu glass (dipakai binding atribut, bukan kelas —
+    class selector LiteWearable tidak mendukung data binding). `rim` = warna
+    border tipis yang memberi kesan tepi kaca. opacity dikirim sebagai STRING
+    agar runtime liteWearable menerima tipe atribut yang paling andal. */
 function temaStatus(status) {
   if (status === 'lewat') {
     // redup agar fokus pada waktu yang tersisa
-    return { bg: '#000000', teks: '#5f6368', penanda: '#5f6368', opacity: '1' };
+    return { bg: '#080b10', rim: '#161b22', teks: '#5f6368', penanda: '#5f6368', opacity: '1' };
   }
   if (status === 'berlangsung') {
-    // masa 10 menit menjelang masuk waktu (hijau)
-    return { bg: '#0d3320', teks: '#6ee7a0', penanda: '#6ee7a0', opacity: '1' };
+    // masa H-10 menit menjelang masuk waktu (hijau)
+    return { bg: '#0f3d26', rim: '#3ddc84', teks: '#6ee7a0', penanda: '#6ee7a0', opacity: '1' };
   }
-  // mendatang / berikutnya
-  return { bg: '#101418', teks: '#e8eaed', penanda: '#7ec8ff', opacity: '1' };
+  // berikutnya / mendatang — panel biru-glass
+  return { bg: '#101a2a', rim: '#3a5a86', teks: '#eaf1f8', penanda: '#9ed4ff', opacity: '1' };
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */
