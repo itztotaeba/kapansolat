@@ -1,15 +1,16 @@
 /* ==========================================================================
-   index.css — VERSI BERSIH + DI-TENGAH (layar GT 7 Pro 454x454 px)
+   index.css — VERSI BESAR + DI-TENGAH (layar GT 7 Pro 454x454 px)
    ==========================================================================
-   Panel GT 7 Pro 454x454 px ≈ area pakai ±242x242 dp. Semua tinggi/lebar
-   EKSPLISIT (tidak ada baris kosong). Perubahan permintaan pengguna:
-     - seluruh konten DI-PUSATKAN secara vertikal & horizontal (justify-
-       content: center pada .container) — tidak lagi numpuk di atas;
-     - font jam "menuju" diperkecil (16px) & sejajar label → tidak menutupi
-       hitung mundur;
-     - kotak waktu sholat TANPA dome/border/penanda yang mengganggu —
-       hanya latar solid gelap + teks nama & JAM yang jelas terbaca;
-     - box/kotak setelah Isya DIHAPUS — grid hanya berisi 5 waktu sholat.
+   Panel GT 7 Pro 454x454 px ≈ area pakai ±242x242 dp. Permintaan terbaru:
+     - SELURUH tampilan DIPERBEBESAR ±30% dari versi sebelumnya:
+       kotak lebih tinggi, font tanggal/jam/grid diperbesar;
+     - konten tetap di-pusatkan vertikal & horizontal (justify-content:
+       center pada .container);
+     - tiap kotak grid = NAMA + JAM sholat, TANPA garis/centang/dome;
+     - box setelah Isya DIHAPUS (grid hanya 5 waktu sholat).
+   Warna per-status memakai KELAS CSS (.lewat/.berlangsung/.berikutnya)
+   yang dipilihkan JavaScript lewat properti `kelas` tiap item — BUKAN
+   binding ekspresi di atribut class maupun atribut kustom color pada tag.
    Hemat baterai AMOLED: tanpa gradien/animasi.
    ========================================================================== */
 
@@ -25,104 +26,118 @@
 
 /* ---------- gaya KOTAK umum ---------- */
 .box {
-  width: 226px;
-  border-radius: 14px;
+  width: 232px;
+  border-radius: 16px;
   border-width: 0px;
   background-color: #101a2b;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
-/* ==================== BOX 1: TANGGAL & JAM ==================== */
+/* ==================== BOX 1: TANGGAL & JAM (diperbesar) ==================== */
 .box-tanggal {
-  height: 44px;
+  height: 56px;
   background-color: #0b1220;
 }
 .t-glav {
-  width: 218px;
-  font-size: 11px;
+  width: 224px;
+  font-size: 14px;
   color: #9fb0c3;
   text-align: center;
 }
 .t-jam {
-  width: 218px;
-  font-size: 17px;
+  width: 224px;
+  font-size: 22px;
   color: #ffffff;
   text-align: center;
+  margin-top: 2px;
 }
 
-/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============ */
+/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (diperbesar) ============ */
 .box-next {
-  height: 66px;
+  height: 84px;
   background-color: #16283f;
 }
-/* tiga baris bertumpuk: label → jam (kecil) → hitung mundur */
+/* tiga baris bertumpuk: label → jam → hitung mundur (tidak saling menutupi) */
 .t-next-label {
-  width: 218px;
-  font-size: 12px;
+  width: 224px;
+  font-size: 15px;
   color: #9ed4ff;
   text-align: center;
 }
-/* FONT JAM KECIL & DI TENGAH (14px) — tidak menutupi countdown */
 .t-next-waktu {
-  width: 218px;
-  font-size: 14px;
+  width: 224px;
+  font-size: 17px;
   color: #ffffff;
   text-align: center;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .t-next-sisa {
-  width: 218px;
-  font-size: 12px;
+  width: 224px;
+  font-size: 14px;
   color: #ffd166;
   text-align: center;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 /* ==================== BOX: jadwal belum diisi ==================== */
 .box-kosong {
-  height: 58px;
+  height: 64px;
   background-color: #1d1015;
 }
 .t-kosong {
-  width: 206px;
-  font-size: 12px;
+  width: 214px;
+  font-size: 14px;
   color: #ff8a80;
   text-align: center;
 }
 
 /* ============ GRID 2 KOLOM x 3 BARIS: NAMA + JAM SHOLAT ============ */
 .grid {
-  width: 226px;
-  height: 114px;                    /* 3 baris x (32px kotak + 6px jarak) */
+  width: 232px;
+  height: 144px;                    /* 3 baris x (40px kotak + 8px jarak) */
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-between;
 }
 .sel {
   /* Kotak bersih: TANPA border/dome/penanda — fokus keterbacaan jadwal */
-  width: 110px;
-  height: 32px;
-  border-radius: 12px;
+  width: 112px;
+  height: 40px;
+  border-radius: 14px;
   border-width: 0px;
-  background-color: #152a45;      /* default; ditimpa binding per-status */
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-left: 8px;
-  padding-right: 8px;
-  margin-bottom: 6px;
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-bottom: 8px;
+  background-color: #152a45;        /* default = mendatang */
 }
 .sel-nama {
-  width: 58px;
-  font-size: 12px;
-  color: #eaf1f8;                 /* default; ditimpa binding */
+  width: 60px;
+  font-size: 15px;
+  color: #eaf1f8;
 }
 .sel-jam {
-  width: 36px;
-  font-size: 13px;
+  width: 42px;
+  font-size: 17px;
   text-align: right;
-  color: #ffffff;                 /* default; ditimpa binding */
+  color: #ffffff;
+}
+
+/* ---- varian warna per-status (kelas dipilih JavaScript via $item.kelas) ---- */
+.mendatang {                       /* masih jauh → biru standar */
+  background-color: #152a45;
+}
+.berikutnya {                      /* sholat terdekat berikutnya → biru terang */
+  background-color: #1d3a5f;
+}
+.berlangsung {                     /* masa H-10 menit → hijau lembut */
+  background-color: #103524;
+}
+.lewat {                           /* sudah lewat → gelap redup, teks tetap jelas */
+  background-color: #0c1119;
 }

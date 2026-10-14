@@ -41,11 +41,17 @@
        Lima kotak saja — Subuh|Zuhur / Ashar|Maghrib / Isya.
        Tiap kotak: NAMA waktu + JAM masuknya.
        (Kotak ke-6 "Berikutnya" DIHAPUS sesuai permintaan — informasinya
-       sudah ada di BOX "Menuju ..." di atas.) -->
+       sudah ada di BOX "Menuju ..." di atas.)
+
+       Catatan teknis: TIDAK memakai atribut kustom background-color/color
+       dengan binding (memicu warning "use customize attr") maupun binding
+       ekspresi pada class (ditolak LegacyCompileLiteJS). Kelas per-status
+       ('mendatang'/'berikutnya'/'berlangsung'/'lewat') disiapkan
+       JavaScript sebagai string $item.kelas dan digabung statis di sini. -->
   <div class="grid" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" class="sel" background-color="{{ $item.bg }}">
-      <text class="sel-nama" color="{{ $item.warnaTeks }}" lines="1">{{ $item.nama }}</text>
-      <text class="sel-jam" color="{{ $item.warnaJam }}" lines="1">{{ $item.waktu }}</text>
+    <div for="{{ jadwal }}" tid="id" class="sel {{ $item.kelas }}">
+      <text class="sel-nama" lines="1">{{ $item.nama }}</text>
+      <text class="sel-jam" lines="1">{{ $item.waktu }}</text>
     </div>
   </div>
 
