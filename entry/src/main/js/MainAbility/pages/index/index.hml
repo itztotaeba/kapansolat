@@ -1,5 +1,44 @@
+<!--
+  ============================================================================
+  index.hml — LAYAR UTAMA JADWAL SHOLAT (Huawei Watch GT 7 Pro / LiteWearable)
+  ============================================================================
+  Struktur:
+    1. Tanggal hari ini (format Indonesia, dari jam sistem) + jam saat ini
+    2. Kartu "menuju sholat berikutnya" + hitung mundur sisa waktu
+    3. Daftar 5 waktu sholat dengan penanda status:
+         ✓ = sudah lewat (redup) | ▶ = berlangsung | ➜ = berikutnya/mendatang
+  Desain minimalis hemat daya: tanpa animasi, warna solid, teks besar.
+  ============================================================================
+-->
 <div class="container">
-    <text class="title">
-        {{ $t('strings.hello') }} {{ title }}
-    </text>
+
+  <!-- ===== 1. HEADER: TANGGAL & JAM ===== -->
+  <div class="header">
+    <text class="tanggal">{{ tanggalHariIni }}</text>
+    <text class="jam">{{ jamSekarang }}</text>
+  </div>
+
+  <!-- ===== 2. KARTU MENUJU SHOLAT BERIKUTNYA ===== -->
+  <div class="kartu-next" if="{{ tersedia }}">
+    <text class="next-label">Menuju {{ namaBerikutnya }}</text>
+    <text class="next-waktu">{{ waktuBerikutnya }}</text>
+    <text class="next-sisa">⏳ {{ sisaWaktu }}</text>
+  </div>
+
+  <!-- ===== PERINGATAN BILA DATA BELUM DIAISI ===== -->
+  <div class="kosong" if="{{ !tersedia }}">
+    <text class="kosong-teks">Jadwal belum tersedia. Isi blok data di common/jadwal-sholat.js</text>
+  </div>
+
+  <!-- ===== 3. DAFTAR 5 WAKTU SHOLAT ===== -->
+  <list class="daftar" if="{{ tersedia }}">
+    <list-item for="{{ jadwal }}" class="baris {{ $item.status }}">
+      <div class="baris-dalam">
+        <text class="penanda">{{ $item.penanda }}</text>
+        <text class="nama">{{ $item.nama }}</text>
+        <text class="waktu">{{ $item.waktu }}</text>
+      </div>
+    </list-item>
+  </list>
+
 </div>
