@@ -56,7 +56,7 @@
 
 /* ---------- Bila jadwal belum diisi ---------- */
 .kosong {
-  flex: 1;
+  flex: 1;              /* cat. LiteWearable: 'flex' didukung; hindari 'flex-grow' */
   justify-content: center;
   align-items: center;
 }
@@ -68,13 +68,13 @@
 
 /* ---------- Daftar 5 waktu sholat ---------- */
 .daftar {
-  flex: 1;
+  flex: 1;              /*LiteWearable mendukung 'flex', BUKAN 'flex-grow'*/
   width: 100%;
+  flex-direction: column;
 }
 .baris {
-  width: 100%;
-}
-.baris-dalam {
+  /* kelas STATIS — warna per-status diberikan via atribut langsung di HML
+     (class selector tidak boleh memakai data binding di LiteWearable) */
   flex-direction: row;
   align-items: center;
   width: 100%;
@@ -89,25 +89,14 @@
   text-align: center;
 }
 .nama {
-  flex: 1;
+  flex: 1;              /*hindari 'flex-grow': bukan atribut standar LiteWearable*/
   font-size: 16px;
 }
 .waktu {
   font-size: 16px;
 }
 
-/* Status: mendatang (putih biasa) */
-.mendatang .baris-dalam { background-color: #101418; }
-.mendatang .penanda { color: #7ec8ff; }
-.mendatang .nama, .mendatang .waktu { color: #e8eaed; }
-
-/* Status: berikutnya disorot (sama dgn mendatang; sorotan utama ada di kartu) */
-
-/* Status: berlangsung — masa 10 menit menjelang masuk waktu (hijau) */
-.berlangsung .baris-dalam { background-color: #0d3320; }
-.berlangsung .penanda, .berlangsung .nama, .berlangsung .waktu { color: #6ee7a0; }
-
-/* Status: lewat — redup agar fokus pada waktu yang tersisa */
-.lewat .baris-dalam { background-color: #000000; }
-.lewat .penanda { color: #5f6368; }
-.lewat .nama, .lewat .waktu { color: #5f6368; }
+/* Warna default (status mendatang). Nilai per-baris ditimpa lewat binding
+   atribut style="color/background-color/opacity" di index.hml. */
+.penanda { color: #7ec8ff; }
+.nama, .waktu { color: #e8eaed; }

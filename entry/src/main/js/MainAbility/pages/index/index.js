@@ -69,15 +69,23 @@ export default {
         this.sisaWaktu = 'Jadwal hari ini selesai';
       }
 
-      // Daftar 5 waktu + penanda status
+      // Daftar 5 waktu + penanda status.
+      // PENTING (LiteWearable): class selector di HML tidak mendukung data
+      // binding, jadi tampilan per-status dibawa lewat atribut warna/opacity
+      // yang di-binding langsung ke field di bawah ini.
       var daftar = [];
       for (var i = 0; i < st.daftar.length; i++) {
         var it = st.daftar[i];
+        var t = temaStatus(it.status);
         daftar.push({
           nama: it.nama,
           waktu: it.waktu || '--:--',
           status: it.status,
-          penanda: penandaStatus(it)
+          penanda: penandaStatus(it),
+          bg: t.bg,
+          warnaTeks: t.teks,
+          warnaPenanda: t.penanda,
+          opacity: t.opacity
         });
       }
       this.jadwal = daftar;
@@ -93,11 +101,26 @@ export default {
 /* ----------------------------- fungsi kecil ------------------------------- */
 function pad2(n) { return (n < 10 ? '0' + n : '' + n); }
 
-/** ✓ lewat | ▶ berlangsung/masuk waktu | ➜ berikutnya | • mendatang */
+/** ✓ lewat | ▶ berlangsung/masuk waktu | ➜ berikutnya/mendatang */
 function penandaStatus(it) {
   if (it.status === 'lewat') return '✓';
   if (it.status === 'berlangsung') return '▶';
   return '➜';
+}
+
+/** Palet warna per-status (dipakai binding atribut, bukan pergantian kelas —
+    karena class selector LiteWearable tidak mendukung data binding). */
+function temaStatus(status) {
+  if (status === 'lewat') {
+    // redup agar fokus pada waktu yang tersisa
+    return { bg: '#000000', teks: '#5f6368', penanda: '#5f6368', opacity: 1 };
+  }
+  if (status === 'berlangsung') {
+    // masa 10 menit menjelang masuk waktu (hijau)
+    return { bg: '#0d3320', teks: '#6ee7a0', penanda: '#6ee7a0', opacity: 1 };
+  }
+  // mendatang / berikutnya
+  return { bg: '#101418', teks: '#e8eaed', penanda: '#7ec8ff', opacity: 1 };
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */
