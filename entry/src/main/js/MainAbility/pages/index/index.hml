@@ -1,18 +1,18 @@
 <!--
   ============================================================================
-  index.hml — LAYAR UTAMA "KAPAN SOLAT" (grid 2 kolom, tiap sel ber-kotak)
+  index.hml — LAYAR UTAMA "KAPAN SOLAT" (versi bersih, semua dalam box)
   ============================================================================
   Target layar GT 7 Pro 454x454 px. Aturan LiteWearable yang dipatuhi:
     - class selector TIDAK memakai data binding → kelas selalu statis;
     - warna per-status di-binding ke ATRIBUT tag tunggal (background-color,
-      border-color, color), bukan lewat `style` maupun `class`;
+      border-color, color), bukan `style` maupun `class`;
     - setiap teks diberi width eksplisit + lines:1 agar tidak hilang.
 
-  Struktur:
-    [BOX] Tanggal hari ini + jam sistem
-    [BOX] Menuju sholat berikutnya (label · waktu · hitung mundur)
-    [GRID 2 KOLOM] 6 kotak: Subuh | Zuhur / Ashar | Maghrib / Isya | Pengingat
-      → tiap kotak menampilkan NAMA waktu DAN JAM-nya (bukan daftar vertikal)
+  Perubahan vs versi lama (permintaan pengguna):
+    - TIDAK ada penanda ✓/▶/➜ dan dome/border mencolok lagi — tiap kotak
+      cukup NAMA + JAM dengan kontras penuh agar jadwal terbaca jelas;
+    - Waktu sholat memakai GRID 2 KOLOM;
+    - Box status pengingat setelah Isya DIHAPUS.
   ============================================================================
 -->
 <div class="container">
@@ -23,11 +23,14 @@
     <text class="t-jam">{{ jamSekarang }}</text>
   </div>
 
-  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============ -->
+  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============
+       Nama sholat + jam masuk SEJAJAR satu baris (jam diperkecil agar
+       tidak menutupi hitung mundur di bawahnya). -->
   <div class="box box-next" if="{{ tersedia }}">
-    <div class="dome"></div>
-    <text class="t-next-label">{{ pesanNext }}</text>
-    <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
+    <div class="r-next">
+      <text class="t-next-label">{{ pesanNext }}</text>
+      <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
+    </div>
     <text class="t-next-sisa">{{ sisaWaktu }}</text>
   </div>
 
@@ -36,23 +39,18 @@
     <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ============ GRID WAKTU SHOLAT (2 KOLOM, Tiap SEL = KARTU KACA) =====
-       5 sel waktu sholat (for) + 1 sel pengingat = grid 3 baris x 2 kolom.
-       Setiap sel: penanda status + NAMA waktu + JAM masuknya. -->
+  <!-- ============ GRID WAKTU SHOLAT (2 KOLOM x 3 BARIS) ============
+       Enam kotak rata penuh. Tiap kotak: NAMA waktu + JAM masuknya.
+       Kotak ke-6 = ringkasan sholat berikutnya (pengganti daftar vertikal). -->
   <div class="grid" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" class="sel" background-color="{{ $item.bg }}" border-color="{{ $item.rim }}">
-      <div class="sel-dome" background-color="{{ $item.dome }}"></div>
-      <text class="sel-penanda" color="{{ $item.warnaPenanda }}">{{ $item.penanda }}</text>
+    <div for="{{ jadwal }}" class="sel" background-color="{{ $item.bg }}">
       <text class="sel-nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
       <text class="sel-jam" color="{{ $item.warnaJam }}">{{ $item.waktu }}</text>
     </div>
 
-    <!-- SEL KE-6: status pengingat (Metode A+B) dalam kotak yang sama -->
-    <div class="sel sel-alarm" background-color="{{ bgAlarm }}" border-color="{{ rimAlarm }}">
-      <div class="sel-dome" background-color="{{ domeAlarm }}"></div>
-      <text class="sel-penanda" color="#7fdca4">⏰</text>
-      <text class="sel-nama" color="#cfe8d8">Pengingat</text>
-      <text class="sel-jam sel-jam-kecil" color="{{ warnaAlarm }}">{{ ringkasAlarm }}</text>
+    <div class="sel sel-info" background-color="{{ bgInfo }}">
+      <text class="sel-nama" color="#9ed4ff">{{ infoJudul }}</text>
+      <text class="sel-jam sel-jam-kecil" color="{{ warnaInfo }}">{{ infoTeks }}</text>
     </div>
   </div>
 
