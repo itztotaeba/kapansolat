@@ -1,11 +1,113 @@
+/* ==========================================================================
+   index.css — Gaya layar utama. Tema gelap OLED: hemat baterai, kontras
+   tinggi, mudah dibaca sekilas di layar kecil jam. Tanpa animasi/gambar berat.
+   ========================================================================== */
+
 .container {
   width: 100%;
   height: 100%;
+  flex-direction: column;
+  background-color: #000000;
+  padding: 8px 6px;
+}
+
+/* ---------- Header tanggal & jam ---------- */
+.header {
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.tanggal {
+  font-size: 15px;
+  color: #9aa0a6;
+  text-align: center;
+}
+.jam {
+  font-size: 26px;
+  color: #ffffff;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ---------- Kartu menuju sholat berikutnya ---------- */
+.kartu-next {
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 6px 4px;
+  border-radius: 10px;
+  background-color: #12243d;
+  margin-bottom: 6px;
+}
+.next-label {
+  font-size: 14px;
+  color: #7ec8ff;
+}
+.next-waktu {
+  font-size: 24px;
+  color: #ffffff;
+  margin-top: 1px;
+}
+.next-sisa {
+  font-size: 13px;
+  color: #ffd166;
+  margin-top: 2px;
+}
+
+/* ---------- Bila jadwal belum diisi ---------- */
+.kosong {
+  flex: 1;
   justify-content: center;
   align-items: center;
 }
-.title {
-  width: 200px;
-  font-size: 30px;
+.kosong-teks {
+  font-size: 14px;
+  color: #ff8a80;
   text-align: center;
 }
+
+/* ---------- Daftar 5 waktu sholat ---------- */
+.daftar {
+  flex: 1;
+  width: 100%;
+}
+.baris {
+  width: 100%;
+}
+.baris-dalam {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 8px;
+  margin-bottom: 3px;
+}
+.penanda {
+  width: 22px;
+  font-size: 14px;
+  text-align: center;
+}
+.nama {
+  flex: 1;
+  font-size: 16px;
+}
+.waktu {
+  font-size: 16px;
+}
+
+/* Status: mendatang (putih biasa) */
+.mendatang .baris-dalam { background-color: #101418; }
+.mendatang .penanda { color: #7ec8ff; }
+.mendatang .nama, .mendatang .waktu { color: #e8eaed; }
+
+/* Status: berikutnya disorot (sama dgn mendatang; sorotan utama ada di kartu) */
+
+/* Status: berlangsung — masa 10 menit menjelang masuk waktu (hijau) */
+.berlangsung .baris-dalam { background-color: #0d3320; }
+.berlangsung .penanda, .berlangsung .nama, .berlangsung .waktu { color: #6ee7a0; }
+
+/* Status: lewat — redup agar fokus pada waktu yang tersisa */
+.lewat .baris-dalam { background-color: #000000; }
+.lewat .penanda { color: #5f6368; }
+.lewat .nama, .lewat .waktu { color: #5f6368; }
