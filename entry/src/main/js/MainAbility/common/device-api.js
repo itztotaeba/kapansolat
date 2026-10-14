@@ -17,48 +17,37 @@
 import vibrator from '@system.vibrator';
 import notification from '@system.notification';
 
-// Jalur 2 (cadangan): pembungkus statis modul '@ohos.hmAlarm'. Bila build
-// DevEco SDK Anda menolak modul tersebut, komentar SATU baris import ini —
-// jalur 1 (global `hmAlarm`) tetap dicoba lebih dulu dan Metode A utuh.
-import { HmAlarm } from './hm-alarm.js';
+// Catatan: modul '@ohos.hmAlarm' TIDAK di-import statis di sini. Deteksi
+// hmAlarm dilakukan oleh common/alarm-detector.js lewat 4 jalur aman
+// (global.hmAlarm → jembatan global hasil import di hm-alarm.js →
+// this.requireNapi → @system.alarm), semuanya try/catch sehingga tidak
+// pernah bisa membuat halaman gagal render (gejala lama: blank hitam).
+// File common/hm-alarm.js tetap tersedia sebagai opsi jalur-2: bila SDK
+// Anda menyediakan paket @ohos.hmAlarm, cukup uncomment baris import di
+// hm-alarm.js — device-api akan memakainya otomatis via jembatan global.
+import {
+  deteksiModulAlarm,
+  modulAlarmTersedia,
+  jalurAlarmAktif,
+  panggilSetAlarm,
+  panggilHapusAlarm
+} from './alarm-detector.js';
 
-// Satu variabel pemuat alarm; dideteksi lewat dua jalur aman di bawah.
-var hmAlarm = null;
-
-// ============================================================================
-// PEMUATAN MODUL ALARM (hmAlarm) — dua jalur, aman untuk semua SDK:
-//
-//  JALUR 1 (utama, standar OpenHarmony liteWearable): modul global `hmAlarm`
-//    yang sudah terdaftar oleh runtime pada objek `global`. Inilah cara resmi
-//    contoh SDK: hmAlarm.setAlarm({ hour, minute, vibration, label }).
-//  JALUR 2 (cadangan): import statis dari common/hm-alarm.js untuk SDK yang
-//    mengekspor hmAlarm sebagai paket '@ohos.hmAlarm' (konstruktor/objek).
-//
-//  DILARANG memakai fungsi global require() — runtime liteWearable tidak
-//  mendukungnya; ReferenceError yang lolos membuat seluruh halaman gagal
-//  render (layar blank hitam). Kedua jalur di bawah dilindungi try/catch,
-//  sehingga kegagalan salah satunya TIDAK pernah menghentikan JS halaman.
-// ============================================================================
-try {
-  var _g = (typeof global !== 'undefined') ? global
-         : ((typeof window !== 'undefined') ? window : {});
-  if (_g.hmAlarm && typeof _g.hmAlarm.setAlarm === 'function') {
-    hmAlarm = _g.hmAlarm; // jalur 1 berhasil
-  }
-} catch (e) { /* lanjut ke jalur 2 */ }
-
-if (!hmAlarm) {
-  try {
-    if (typeof HmAlarm === 'function') {
-      var _alarmIns = new HmAlarm();
-      if (_alarmIns && typeof _alarmIns.setAlarm === 'function') hmAlarm = _alarmIns;
-    } else if (HmAlarm && typeof HmAlarm.setAlarm === 'function') {
-      hmAlarm = HmAlarm; // beberapa SDK mengekspor objek fungsi langsung
-    }
-  } catch (e) {
-    hmAlarm = null; // Metode B dilewati dengan aman, tanpa crash
-  }
+/** Beri kesempatan deteksi memakai konteks halaman (requireNapi). */
+export function daftarkanKonteksAlarm(ctx) {
+  try { deteksiModulAlarm(ctx); } catch (e) { /* aman */ }
 }
+
+// ============================================================================
+// PEMUATAN MODUL ALARM (hmAlarm) — delegasi ke alarm-detector.js (4 jalur):
+//   1) global.hmAlarm        (standar runtime liteWearable / OpenHarmony)
+//   2) @ohos.hmAlarm statis  (via hm-alarm.js + jembatan global __hmAlarmMod)
+//   3) this.requireNapi('hmAlarm') (helper JS-FA pada instance halaman)
+//   4) @system.alarm         (API lama)
+// Semua dibungkus try/catch; kegagalan satu jalur TIDAK pernah membuat
+// halaman gagal render (gejala lama: layar blank hitam).
+// ============================================================================
+try { deteksiModulAlarm(null); } catch (e) { /* dicoba lagi berkala */ }
 
 /* ------------------------------ GETARAN ---------------------------------- */
 /**
@@ -124,11 +113,13 @@ export function tampilkanNotifikasi(s) {
  * @returns {boolean} sukses dipasang
  */
 export function pasangAlarm(detikDariSekarang, label, getarkan) {
-  if (!hmAlarm) return false;
+  // coba deteksi ulang bila belum ketemu (idempoten & murah)
+  if (!modulAlarmTersedia()) { try { deteksiModulAlarm(null); } catch (e) {} }
+  if (!modulAlarmTersedia()) return false;
   try {
     var wktuTrigger = Date.now() + Math.max(1, detikDariSekarang) * 1000;
     var d = new Date(wktuTrigger);
-    hmAlarm.setAlarm({
+    var ok = panggilSetAlarm({
       hour: d.getHours(),                 // jam trigger (waktu lokal)
       minute: d.getMinutes(),             // menit trigger
       time: wktuTrigger,                  // beberapa SDK memakai epoch-ms
@@ -142,7 +133,7 @@ export function pasangAlarm(detikDariSekarang, label, getarkan) {
         console.warn('[device-api] alarm gagal (' + err + '): ' + msg);
       }
     });
-    return true;
+    return ok;
   } catch (e) {
     console.warn('[device-api] pasangAlarm exception: ' + e);
     return false;
@@ -151,21 +142,19 @@ export function pasangAlarm(detikDariSekarang, label, getarkan) {
 
 /** Hapus seluruh alarm milik aplikasi (dipakai sebelum pasang ulang). */
 export function hapusSemuaAlarm() {
-  if (!hmAlarm) return;
-  try {
-    if (typeof hmAlarm.clearAllAlarms === 'function') {
-      hmAlarm.clearAllAlarms();
-    } else if (typeof hmAlarm.cancel === 'function') {
-      hmAlarm.cancel({});
-    }
-  } catch (e) {
+  try { panggilHapusAlarm(); } catch (e) {
     console.warn('[device-api] hapusSemuaAlarm gagal: ' + e);
   }
 }
 
 /** Apakah modul alarm tersedia di perangkat ini? */
 export function alarmTersedia() {
-  return !!hmAlarm;
+  try { return modulAlarmTersedia(); } catch (e) { return false; }
+}
+
+/** Nama jalur hmAlarm yang aktif — untuk kartu status Metode B. */
+export function jalurAlarmLabel() {
+  try { return jalurAlarmAktif(); } catch (e) { return '(belum terdeteksi)'; }
 }
 
 /** Jumlah alarm yang berhasil dipasang pada pemanggilan terakhir. */
