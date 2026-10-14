@@ -1,6 +1,0 @@
-{
-  "pages": [
-    "pages/index/index",
-    "pages/detail/detail"
-  ]
-}
