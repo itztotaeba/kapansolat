@@ -31,6 +31,7 @@ var INTERVAL_MS = 30 * 1000; // cek tiap 30 detik — cukup & hemat daya
 var _timer = null;          // id setInterval aktif
 var _sudahPicu = {};        // {'YYYY-MM-DD-namaWaktu': true} anti pemicuan ganda
 var _keyHariTerakhir = '';  // deteksi pergantian hari utk pasang ulang alarm B
+var _alarmTerpasangHariIni = ''; // kunci hari saat alarm B sukses terpasang
 
 /**
  * PROTEKSI TOTAL: seluruh isi siklus pengecekan dibungkus try/catch.
@@ -63,6 +64,15 @@ function satuKaliCek() {
     pasangUlangAlarmSistem();
   }
   _keyHariTerakhir = key;
+
+  // --- PEMASANGAN ULANG OTOMATIS: bila pada pengecekan sebelumnya modul
+  // hmAlarm belum terdeteksi (mis. baru didaftarkan runtime belakangan),
+  // coba lagi sekarang tanpa menunggu aplikasi dibuka ulang. Sekali alarm
+  // terpasang hari ini, tidak ada pekerjaan tambahan (hemat baterai). ---
+  if (!_alarmTerpasangHariIni || _alarmTerpasangHariIni !== key) {
+    var n = pasangUlangAlarmSistem();
+    if (n > 0) _alarmTerpasangHariIni = key;
+  }
 
   // --- METODE A: cari kejadian yang jatuh dalam jendela 10 menit ---
   var kejadian = kejadianPengingat(now, MENIT_SEBELUM);

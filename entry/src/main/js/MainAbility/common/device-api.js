@@ -5,9 +5,7 @@
  * Modul yang dipakai:
  *   - @system.vibrator    → getaran (API resmi, tersedia di liteWearable)
  *   - hmAlarm             → alarm sistem: tetap berbunyi walau app ditutup.
- *                           Dimuat lewat import statis dari common/hm-alarm.js
- *                           (LIHAT CATATAN DI BAWAH — jangan pernah memakai
- *                           fungsi global require() di runtime liteWearable).
+ *                           Dimuat lewat DUA jalur aman (lihat catatan di bawah).
  *   - @system.notification→ notifikasi teks di layar (Metode A)
  *
  * SEMUA pemanggilan dibungkus try/catch agar aplikasi tidak pernah crash
@@ -19,32 +17,47 @@
 import vibrator from '@system.vibrator';
 import notification from '@system.notification';
 
-// ============================================================================
-// PEMUATAN MODUL ALARM — SANGAT PENTING (penyebab lama "layar blank"):
-// Runtime liteWearable TIDAK mendukung fungsi global `require()`. Dulu modul
-// ini memuat hmAlarm lewat try { require('@ohos.hmAlarm') } — ReferenceError
-// yang muncul membuat seluruh file JS gagal dieksekusi sehingga halaman tidak
-// pernah ter-render (tersisa latar hitam + garis biru bawaan sistem).
-//
-// Solusi: import STATIS dari pembungkus common/hm-alarm.js. Pola DevEco untuk
-// modul @ohos.* adalah `import X from '@ohos.xxx'` lalu `new X()`; karena itu
-// hm-alarm.js mengimpor nama default HmAlarm dan mengekspor konstruktor apa
-// adanya. Bila SDK/firmware tidak menyediakan modulnya, bundler DevEco akan
-// MEMINTA Anda mengomentari SATU baris import di hm-alarm.js (satu titik saja,
-// lihat file tersebut) — Metode A tetap berjalan penuh.
-// ============================================================================
+// Jalur 2 (cadangan): pembungkus statis modul '@ohos.hmAlarm'. Bila build
+// DevEco SDK Anda menolak modul tersebut, komentar SATU baris import ini —
+// jalur 1 (global `hmAlarm`) tetap dicoba lebih dulu dan Metode A utuh.
 import { HmAlarm } from './hm-alarm.js';
 
+// Satu variabel pemuat alarm; dideteksi lewat dua jalur aman di bawah.
 var hmAlarm = null;
+
+// ============================================================================
+// PEMUATAN MODUL ALARM (hmAlarm) — dua jalur, aman untuk semua SDK:
+//
+//  JALUR 1 (utama, standar OpenHarmony liteWearable): modul global `hmAlarm`
+//    yang sudah terdaftar oleh runtime pada objek `global`. Inilah cara resmi
+//    contoh SDK: hmAlarm.setAlarm({ hour, minute, vibration, label }).
+//  JALUR 2 (cadangan): import statis dari common/hm-alarm.js untuk SDK yang
+//    mengekspor hmAlarm sebagai paket '@ohos.hmAlarm' (konstruktor/objek).
+//
+//  DILARANG memakai fungsi global require() — runtime liteWearable tidak
+//  mendukungnya; ReferenceError yang lolos membuat seluruh halaman gagal
+//  render (layar blank hitam). Kedua jalur di bawah dilindungi try/catch,
+//  sehingga kegagalan salah satunya TIDAK pernah menghentikan JS halaman.
+// ============================================================================
 try {
-  if (typeof HmAlarm === 'function') {
-    var _alarmIns = new HmAlarm();
-    if (_alarmIns && typeof _alarmIns.setAlarm === 'function') hmAlarm = _alarmIns;
-  } else if (HmAlarm && typeof HmAlarm.setAlarm === 'function') {
-    hmAlarm = HmAlarm; // beberapa SDK mengekspor objek fungsi langsung
+  var _g = (typeof global !== 'undefined') ? global
+         : ((typeof window !== 'undefined') ? window : {});
+  if (_g.hmAlarm && typeof _g.hmAlarm.setAlarm === 'function') {
+    hmAlarm = _g.hmAlarm; // jalur 1 berhasil
   }
-} catch (e) {
-  hmAlarm = null; // Metode B dilewati dengan aman, tanpa crash
+} catch (e) { /* lanjut ke jalur 2 */ }
+
+if (!hmAlarm) {
+  try {
+    if (typeof HmAlarm === 'function') {
+      var _alarmIns = new HmAlarm();
+      if (_alarmIns && typeof _alarmIns.setAlarm === 'function') hmAlarm = _alarmIns;
+    } else if (HmAlarm && typeof HmAlarm.setAlarm === 'function') {
+      hmAlarm = HmAlarm; // beberapa SDK mengekspor objek fungsi langsung
+    }
+  } catch (e) {
+    hmAlarm = null; // Metode B dilewati dengan aman, tanpa crash
+  }
 }
 
 /* ------------------------------ GETARAN ---------------------------------- */
@@ -93,29 +106,35 @@ export function tampilkanNotifikasi(s) {
  * Pasang SATU alarm sistem untuk `detikDariSekarang` ke depan.
  * Alarm bekerja walau aplikasi ditutup — inilah Metode B.
  *
+ * Parameter mengikuti format RESMI contoh SDK liteWearable:
+ *   hmAlarm.setAlarm({ hour, minute, vibration, label })
+ * Field tambahan (time/delay) ikut dikirim untuk SDK varian lain; field
+ * yang tidak dikenal akan diabaikan runtime.
+ *
  * Catatan penting LiteWearable:
  *  - Kapasitas alarm sistem terbatas (umumnya ±10 alarm aktif).
  *  - Sebagian SDK hanya mendukung alarm one-shot dalam hitungan detik/menit,
  *    bukan "alarm harian". Karena itu kita pasang ulang tiap kali aplikasi
- *    dibuka (lihat fungsi `pasangDeretAlarm`).
+ *    dibuka DAN saat pergantian hari (lihat pasangDeretAlarm + pengingat.js),
+ *    sehingga tetap "otomatis terpasang untuk tiap hari".
  *
  * @param {number} detikDariSekarang - delay dalam DETIK (>= 1)
  * @param {string} label             - keterangan yang tampil saat alarm bunyi
  * @param {boolean} getarkan         - aktifkan getaran saat alarm
  * @returns {boolean} sukses dipasang
  */
-export function pasangAlarm(delayDetik, label, getarkan) {
+export function pasangAlarm(detikDariSekarang, label, getarkan) {
   if (!hmAlarm) return false;
   try {
-    var wktuTrigger = Date.now() + Math.max(1, delayDetik) * 1000;
-    // Parameter dikirim lengkap; SDK akan mengabaikan field yang tak dikenal.
+    var wktuTrigger = Date.now() + Math.max(1, detikDariSekarang) * 1000;
+    var d = new Date(wktuTrigger);
     hmAlarm.setAlarm({
-      hour: new Date(wktuTrigger).getHours(),
-      minute: new Date(wktuTrigger).getMinutes(),
-      time: wktuTrigger,          // beberapa SDK memakai epoch-ms
-      delay: delayDetik,          // ...beberapa memakai delay-detik
-      label: label,
-      vibration: !!getarkan,
+      hour: d.getHours(),                 // jam trigger (waktu lokal)
+      minute: d.getMinutes(),             // menit trigger
+      time: wktuTrigger,                  // beberapa SDK memakai epoch-ms
+      delay: Math.max(1, detikDariSekarang), // ...beberapa memakai delay-detik
+      label: label,                       // teks keterangan saat alarm berbunyi
+      vibration: !!getarkan,              // getaran saat alarm (Metode B)
       success: function () {
         console.info('[device-api] alarm terpasang: ' + label);
       },
