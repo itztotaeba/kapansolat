@@ -13,16 +13,19 @@
 
 /* ---------- Header tanggal & jam ---------- */
 .header {
+  width: 100%;                /* LiteWearable: div tanpa ukuran eksplisit bisa ter-layout 0px */
   flex-direction: column;
   align-items: center;
   margin-bottom: 6px;
 }
 .tanggal {
+  width: 100%;
   font-size: 15px;
   color: #9aa0a6;
   text-align: center;
 }
 .jam {
+  width: 100%;
   font-size: 26px;
   color: #ffffff;
   text-align: center;
@@ -31,9 +34,11 @@
 
 /* ---------- Kartu menuju sholat berikutnya ---------- */
 .kartu-next {
-  flex-direction: column;
-  align-items: center;
   width: 100%;
+  height: 86px;           /* tinggi eksplisit: LiteWearable tidak mengenal 'auto' */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   padding: 6px 4px;
   border-radius: 10px;
   background-color: #12243d;
@@ -56,11 +61,14 @@
 
 /* ---------- Bila jadwal belum diisi ---------- */
 .kosong {
-  flex: 1;              /* LiteWearable: pakai 'flex', BUKAN properti non-standar lain */
+  width: 100%;
+  height: 86px;           /* sejajar kartu next */
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 .kosong-teks {
+  width: 95%;
   font-size: 14px;
   color: #ff8a80;
   text-align: center;
@@ -68,8 +76,8 @@
 
 /* ---------- Daftar 5 waktu sholat ---------- */
 .daftar {
-  flex: 1;              /* LiteWearable: gunakan 'flex' (properti standar), bukan varian non-standar */
   width: 100%;
+  height: 185px;          /* 5 baris x 34px + margin 3px — tinggi eksplisit */
   flex-direction: column;
 }
 .baris {
@@ -89,7 +97,7 @@
   text-align: center;
 }
 .nama {
-  flex: 1;              /* LiteWearable: 'flex' adalah properti standar yang didukung */
+  width: 120px;           /* LiteWearable: hindari 'flex' untuk ukuran — pakai px eksplisit */
   font-size: 16px;
 }
 .waktu {
@@ -97,6 +105,6 @@
 }
 
 /* Warna default (status mendatang). Nilai per-baris ditimpa lewat binding
-   atribut style="color/background-color/opacity" di index.hml. */
+   ATRIBUT TAG color/background-color/opacity di index.hml (bukan `style=`). */
 .penanda { color: #7ec8ff; }
 .nama, .waktu { color: #e8eaed; }

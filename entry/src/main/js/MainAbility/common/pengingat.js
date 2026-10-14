@@ -33,6 +33,23 @@ var _sudahPicu = {};        // {'YYYY-MM-DD-namaWaktu': true} anti pemicuan gand
 var _keyHariTerakhir = '';  // deteksi pergantian hari utk pasang ulang alarm B
 
 /**
+ * PROTEKSI TOTAL: seluruh isi siklus pengecekan dibungkus try/catch.
+ * Di runtime liteWearable, satu exception yang lolos dari callback timer
+ * dapat menghentikan proses JS halaman (gejala: layar blank). Dengan
+ * pembungkusan ini, kegagalan sekecil apa pun hanya tercatat di log dan
+ * aplikasi tetap berjalan.
+ */
+function aman(fn) {
+  return function () {
+    try {
+      fn();
+    } catch (e) {
+      console.warn('[pengingat] siklus dicegat try/catch: ' + e);
+    }
+  };
+}
+
+/**
  * Satu siklus pengecekan (dipanggil tiap 30 detik oleh timer).
  * Ringan: hanya beberapa perbandingan integer per iterasi.
  */
@@ -48,7 +65,6 @@ function satuKaliCek() {
   _keyHariTerakhir = key;
 
   // --- METODE A: cari kejadian yang jatuh dalam jendela 10 menit ---
-  var kiniMenit = now.getHours() * 60 + now.getMinutes();
   var kejadian = kejadianPengingat(now, MENIT_SEBELUM);
   for (var i = 0; i < kejadian.length; i++) {
     var ev = kejadian[i];
@@ -63,15 +79,13 @@ function satuKaliCek() {
       console.info('[pengingat] METODA A picu: ' + pesan);
     }
   }
-  // Kini menit dipakai agar lint-safe terhadap optimizer (tidak mengubah state)
-  void kiniMenit;
 }
 
 /** Mulai timer Metode A. Aman dipanggil berkali-kali. */
 export function mulaiPemantauan() {
   if (_timer !== null) return;
-  satuKaliCek(); // sinkronkan status segera saat aplikasi dibuka
-  _timer = setInterval(satuKaliCek, INTERVAL_MS);
+  aman(satuKaliCek)(); // sinkronkan status segera saat aplikasi dibuka
+  _timer = setInterval(aman(satuKaliCek), INTERVAL_MS);
   console.info('[pengingat] Metode A aktif (interval ' + INTERVAL_MS / 1000 + 's)');
 }
 
