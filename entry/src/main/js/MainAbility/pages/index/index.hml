@@ -19,24 +19,22 @@
 
   <!-- ==================== BOX 1: TANGGAL & JAM ==================== -->
   <div class="box box-tanggal">
-    <text class="t-glav">{{ tanggalHariIni }}</text>
-    <text class="t-jam">{{ jamSekarang }}</text>
+    <text class="t-glav" lines="1">{{ tanggalHariIni }}</text>
+    <text class="t-jam" lines="1">{{ jamSekarang }}</text>
   </div>
 
   <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============
-       Nama sholat + jam masuk SEJAJAR satu baris (jam diperkecil agar
-       tidak menutupi hitung mundur di bawahnya). -->
+       TIGA BARIS TERPISAH — nama, jam, dan hitung mundur tidak mungkin
+       saling menutupi (penyebab komplain "font jam kegedean"): -->
   <div class="box box-next" if="{{ tersedia }}">
-    <div class="r-next">
-      <text class="t-next-label">{{ pesanNext }}</text>
-      <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
-    </div>
-    <text class="t-next-sisa">{{ sisaWaktu }}</text>
+    <text class="t-next-label" lines="1">{{ pesanNext }}</text>
+    <text class="t-next-waktu" lines="1">{{ waktuBerikutnya }}</text>
+    <text class="t-next-sisa" lines="1">{{ sisaWaktu }}</text>
   </div>
 
   <!-- ==================== BOX: jadwal belum diisi ==================== -->
   <div class="box box-kosong" if="{{ tidakTersedia }}">
-    <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
+    <text class="t-kosong" lines="2" text-overflow="ellipsis">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
   <!-- ============ GRID WAKTU SHOLAT (2 KOLOM x 3 BARIS) ============
@@ -46,8 +44,8 @@
        sudah ada di BOX "Menuju ..." di atas.) -->
   <div class="grid" if="{{ tersedia }}">
     <div for="{{ jadwal }}" class="sel" background-color="{{ $item.bg }}">
-      <text class="sel-nama" color="{{ $item.warnaTeks }}">{{ $item.nama }}</text>
-      <text class="sel-jam" color="{{ $item.warnaJam }}">{{ $item.waktu }}</text>
+      <text class="sel-nama" color="{{ $item.warnaTeks }}" lines="1">{{ $item.nama }}</text>
+      <text class="sel-jam" color="{{ $item.warnaJam }}" lines="1">{{ $item.waktu }}</text>
     </div>
   </div>
 

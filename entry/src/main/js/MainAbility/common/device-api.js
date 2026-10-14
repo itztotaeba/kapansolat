@@ -18,8 +18,8 @@
 import vibrator from '@system.vibrator';
 import notification from '@system.notification';
 
-// Sisi efek: mengaktifkan JALUR 3 (import statis '@ohos.hmAlarm' + jembatan
-// global __hmAlarmMod). File ini tidak dipakai langsung, cukup di-import.
+// Dimuat paling awal: JALUR 3 (import statis '@ohos.hmAlarm' + jembatan
+// registrasi ke alarm-resmi.js/global). Tidak dipakai langsung, cukup import.
 import './hm-alarm.js';
 
 import {
@@ -73,20 +73,24 @@ export function tampilkanNotifikasi(s) {
 /**
  * Pasang SATU alarm sistem H-x menit sebelum waktu sholat (METODE B).
  * `ev` = satu kejadian dari waktu.js#kejadianPengingat:
- *   ev.triggerJam        → jam LOCAL trigger (0..23)
- *   ev.triggerMenitLokal → menit LOCAL trigger (0..59)
+ *   ev.triggerJam        → jam LOCAL trigger (0..23)  [varian A: hmAlarm]
+ *   ev.triggerMenitLokal → menit LOCAL trigger (0..59)[varian A: hmAlarm]
+ *   ev.selangMenit       → menit menuju trigger       [varian B: delay ms]
  *   ev.nama / ev.masuk   → untuk label keterangan
- * Format parameter mengikuti contoh SDK resmi liteWearable:
- *   hmAlarm.setAlarm({ hour, minute, vibration: true, label })
+ * Alarm dikirim sebagai HARIAN (repeat:1, days:[]) oleh alarm-resmi.js —
+ * koreksi atas bug repeat:0 versi lama yang membuat alarm one-shot dibuang
+ * firmware saat jam trigger-nya sudah lewat hari ini.
  * @returns {boolean} true bila panggilan diterima modul
  */
 export function pasangAlarmKejadian(ev) {
   if (!modulAlarmTersedia()) { try { deteksiModulAlarm(null); } catch (e) {} }
   if (!modulAlarmTersedia()) return false;
   if (!ev || typeof ev.triggerJam !== 'number' || typeof ev.triggerMenitLokal !== 'number') return false;
+  var selang = (typeof ev.selangMenit === 'number' && ev.selangMenit >= 0) ? ev.selangMenit : 0;
   return panggilSetAlarm({
     hour: ev.triggerJam,
     minute: ev.triggerMenitLokal,
+    delayMs: selang * 60 * 1000,   // utk varian '@system.alarm' (when: ms)
     label: '⏰ ' + ev.nama + ' — masuk ' + ev.masuk + ' (H-' + (ev.menitSebelum || 10) + ' mnt)',
     vibration: true
   });
@@ -109,17 +113,22 @@ export function hapusSemuaAlarm() {
   }
 }
 
-/** Jumlah alarm yang berhasil dipasang pada pemanggilan terakhir. */
+/** Jumlah alarm yang BERHASIL dipasang pada pemanggilan terakhir. */
 var _terakhirDipasang = 0;
 export function setJumlahAlarmTerpasang(n) { _terakhirDipasang = n; }
 export function jumlahAlarmTerpasang() { return _terakhirDipasang; }
 
 /**
  * METODOLOGI PEMASANGAN ULANG OTOMATIS:
- * Daftar `kejadian` (waktu.js.kejadianPengingat) diubah menjadi alarm sistem.
- * Dipanggil setiap aplikasi dibuka DAN setiap pergantian hari, sehingga
- * "otomatis terpasang untuk tiap hari" tanpa interaksi pengguna. Saat jadwal
- * diperbarui (build/install baru), fungsi ini juga memuatnya otomatis.
+ * Daftar `kejadian` (waktu.js.kejadianPengingat) diubah menjadi alarm sistem
+ * HARIAN (repeat:1) H-x menit sebelum tiap waktu sholat. Dipanggil setiap
+ * aplikasi dibuka DAN setiap pergantian hari, sehingga "otomatis terpasang
+ * untuk tiap hari" tanpa interaksi pengguna. Saat jadwal diperbarui
+ * (build/install baru), fungsi ini juga memuatnya otomatis.
+ *
+ * Penghitungan JUJUR: hanya alarm yang panggilan modulnya DITERIMA yang
+ * dihitung (bukan asal count seperti versi lama). Diagnostik lengkap
+ * (jalur aktif, sukses/gagal callback) tercatat di hilog.
  *
  * Batas aman: maksimal 10 alarm (kapasitas tipikal liteWearable).
  * @returns {number} jumlah alarm yang berhasil dipasang
@@ -133,6 +142,6 @@ export function pasangDeretAlarm(kejadian) {
   }
   setJumlahAlarmTerpasang(count);
   console.info('[device-api] pasangDeretAlarm: ' + count + '/' + kejadian.length +
-               ' alarm terpasang via ' + jalurAlarmLabel());
+               ' alarm HARIAN diajukan via ' + jalurAlarmLabel());
   return count;
 }

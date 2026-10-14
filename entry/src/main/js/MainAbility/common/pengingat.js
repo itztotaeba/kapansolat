@@ -33,8 +33,11 @@ import {
 } from './device-api.js';
 
 var INTERVAL_MS = 30 * 1000; // cek tiap 30 detik — cukup & hemat daya
+var UJI_ALARM_MS = 25 * 1000; // jeda uji-alarm setelah modul pertama terdeteksi
 
 var _timer = null;          // id setInterval aktif
+var _modulTerdeteksiSebelumnya = false; // transisi deteksi → jadwalkan uji alarm
+var _ujiAlarmTerjadwal = false;
 var _sudahPicu = {};        // {'YYYY-MM-DD-namaWaktu': true} anti pemicuan ganda
 var _keyHariTerakhir = '';  // deteksi pergantian hari utk pasang ulang alarm B
 var _alarmTerpasangHariIni = ''; // kunci hari saat alarm B sukses terpasang
@@ -79,6 +82,20 @@ function satuKaliCek() {
     var n = pasangUlangAlarmSistem();
     if (n > 0) _alarmTerpasangHariIni = key;
   }
+
+  // --- UJI ALARM NYATA ±25 DETIK SETELAH MODUL TERDETEKSI -----------------
+  // Bukti Metode B benar-benar bekerja: pasang SATU alarm percobaan yang
+  // berbunyi ~25 detik kemudian (getaran + label 'Uji alarm'). Bila Anda
+  // merasakannya, seluruh pipeline hmAlarm hidup di jam ini.
+  var tersediaKini = alarmTersedia();
+  if (tersediaKini && !_modulTerdeteksiSebelumnya && !_ujiAlarmTerjadwal) {
+    _ujiAlarmTerjadwal = true;
+    setTimeout(aman(function () {
+      console.info('[pengingat] menguji alarm nyata (~25 detik dari sekarang)…');
+      ujiAlarmNyata();
+    }), UJI_ALARM_MS);
+  }
+  _modulTerdeteksiSebelumnya = tersediaKini;
 
   // --- METODE A: cari kejadian yang jatuh dalam jendela 10 menit ---
   var kejadian = kejadianPengingat(now, MENIT_SEBELUM);
@@ -131,6 +148,25 @@ export function pasangUlangAlarmSistem() {
 export function aktifkanSemuaMetode() {
   mulaiPemantauan();
   pasangUlangAlarmSistem();
+}
+
+/**
+ * Pasang satu alarm PERCOBAAN yang berbunyi dalam ~25 detik.
+ * delayMs kecil → aman walau firmware menolak nilai besar; label jelas.
+ */
+export function ujiAlarmNyata() {
+  try {
+    var ok = pasangAlarmKejadian({
+      triggerJam: new Date().getHours(),
+      triggerMenitLokal: new Date().getMinutes(),
+      selangMenit: 1,                 // varian '@system.alarm': delay 60 dtk maks
+      nama: 'Uji alarm',
+      masuk: '(percobaan)',
+      menitSebelum: 0
+    });
+    console.info('[pengingat] ujiAlarmNyata diajukan: ' + ok);
+    return ok;
+  } catch (e) { console.warn('[pengingat] ujiAlarmNyata dicegat: ' + e); return false; }
 }
 
 /**
