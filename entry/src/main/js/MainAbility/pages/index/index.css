@@ -56,7 +56,7 @@
 
 /* ---------- Bila jadwal belum diisi ---------- */
 .kosong {
-  flex: 1;              /* cat. LiteWearable: 'flex' didukung; hindari 'flex-grow' */
+  flex: 1;              /* LiteWearable: pakai 'flex', BUKAN properti non-standar lain */
   justify-content: center;
   align-items: center;
 }
@@ -68,7 +68,7 @@
 
 /* ---------- Daftar 5 waktu sholat ---------- */
 .daftar {
-  flex: 1;              /*LiteWearable mendukung 'flex', BUKAN 'flex-grow'*/
+  flex: 1;              /* LiteWearable: gunakan 'flex' (properti standar), bukan varian non-standar */
   width: 100%;
   flex-direction: column;
 }
@@ -89,7 +89,7 @@
   text-align: center;
 }
 .nama {
-  flex: 1;              /*hindari 'flex-grow': bukan atribut standar LiteWearable*/
+  flex: 1;              /* LiteWearable: 'flex' adalah properti standar yang didukung */
   font-size: 16px;
 }
 .waktu {
