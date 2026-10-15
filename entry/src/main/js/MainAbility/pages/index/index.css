@@ -4,18 +4,20 @@
    PENTING: LiteWearable HANYA mendukung satuan PX (default). Satuan 'dp'
    DITOLAK LegacyCompileLiteJS ("The `padding` attribute does not support dp").
    Semua ukuran di bawah ditulis dalam PX AKTUAL panel 466x466 px.
-   Revisi UI "PERKECIL ±30% DARI VERSI BOX BESAR" (feedback pengguna:
-   versi box besar sebelumnya malah tampak kacau di layar):
-     - Semua ukuran diturunkan ±30% dari revisi "box besar", masih tetap
-       lebih besar dari versi asli yang "terlalu kecil & banyak blank
-       space" — kompromi di tengah.
+   Revisi UI "BOX MENUJU DIKECILKAN + GRID 1 TEKS" (feedback pengguna):
+     - Box "Menuju" dikecilkan lagi h108 → h80; font 18/24/14px dengan
+       jarak antar baris 2px — semua tulisan tetap jelas terbaca.
+     - Grid: tiap kotak kini SATU <text> gabungan "Nama-JJ:MM"
+       (mis. Subuh-04:16), penanda ✓/▶/➜ DIHAPUS. Ini sekaligus memperbaiki
+       bug "hanya Subuh & Zuhur yang tampil" (struktur 3 kolom mepet 204px
+       bikin kolom ke-3 tidak ter-render di firmware GT 7 Pro).
      - Margin aman lingkaran: padding 16px atas/bawah, 24px kiri/kanan.
      - Lebar konten = 466 - 2*24 = 418px dipakai SEMUA box dan grid.
-     - BOX tanggal+jam (h74) → BOX "Menuju" info utama (h108)
+     - BOX tanggal+jam (h74) → BOX "Menuju" (h80)
        → GRID waktu sholat 2+2+1 (3 baris x h48, kotak sel h44).
      - Rekap tinggi vertikal:
-         16(pad) + 74(box1) + 10 + 108(box2) + 10 + 144(grid) + 16(pad)
-         = 378px ≤ 466px → container justify-content:center sehingga blok
+         16(pad) + 74(box1) + 10 + 80(box2) + 10 + 144(grid) + 16(pad)
+         = 350px ≤ 466px → container justify-content:center sehingga blok
          vertikal TERPUSAT rapi; semua elemen terlihat utuh, TIDAK ADA
          yang terpotong di tepi layar watch.
      - Setiap teks diberi lebar eksplisit lebih kecil dari box-nya dengan
@@ -73,33 +75,33 @@
   margin-top: 4px;                  /* jarak antar baris */
 }
 
-/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (info utama) ============
-   Informasi paling penting → tampil PALING MENONJOL. Tiga baris
-   bertumpuk berjarak: label → jam masuk → hitung mundur, sehingga tidak
-   ada baris yang menutupi baris lain. */
+/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (DIKECILKAN) ============
+   Permintaan pengguna: box ini dikecilkan lagi asal semua tulisan tetap
+   terbaca. h108 → h80; tiga baris berpadat 2px dengan font 18/24/14px —
+   masih nyaman dibaca di PPI 317, tapi tidak lagi mendominasi layar. */
 .box-next {
-  height: 108px;                    /* rekap vertikal: 16+74+10+108+10+144+16 = 378 ≤ 466 */
+  height: 80px;                     /* rekap vertikal: 16+74+10+80+10+144+16 = 350 ≤ 466 */
   background-color: #16283f;
 }
 .t-next-label {
   width: 390px;
-  font-size: 20px;
+  font-size: 18px;
   color: #9ed4ff;
   text-align: center;
 }
 .t-next-waktu {
   width: 390px;
-  font-size: 30px;                  /* jam masuk = angka terpenting */
+  font-size: 24px;                  /* jam masuk tetap paling menonjol */
   color: #ffffff;
   text-align: center;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 .t-next-sisa {
   width: 390px;
-  font-size: 18px;
+  font-size: 14px;                  /* "1 jam 15 menit lagi" ±175px < 390px */
   color: #ffd166;
   text-align: center;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ==================== BOX: jadwal belum diisi ==================== */
@@ -133,7 +135,10 @@
 }
 /* ---------- KOTAK GRID (kelas statis murni; TIDAK ada binding class,
    TIDAK ada atribut kustom background-color/color — keduanya bermasalah
-   di toolchain/runtime GT 7 Pro. Status ditandai lewat TEKS penanda.) ---- */
+   di toolchain/runtime GT 7 Pro.) ----------
+   PERBAIKAN "hanya Subuh & Zuhur yang tampil": tiap kotak kini berisi
+   SATU <text> tunggal "Nama-JJ:MM" (bukan 3 kolom penanda+nama+jam yang
+   lebarnya mepet 204px dan bikin kolom ke-3 tidak ter-render). */
 .sel {
   width: 204px;
   height: 44px;
@@ -141,31 +146,16 @@
   border-width: 0px;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  padding-left: 12px;               /* padding dalam → teks tak menempel */
-  padding-right: 12px;
-  background-color: #152a45;        /* default (bila binding belum jalan) */
+  justify-content: center;          /* teks gabungan dirata-tengah kotak */
+  background-color: #152a45;        /* default (bila setStyle gagal) */
 }
-.sel-nama {
-  width: 96px;                      /* "Maghrib" font 20px muat utuh */
+.sel-gabungan {
+  width: 196px;                     /* "Maghrib-17:51" font 20px ≈ 155px → MUAT */
   font-size: 20px;
   color: #eaf1f8;
-}
-.sel-jam {
-  width: 60px;                      /* "04:21" font 20px muat utuh */
-  font-size: 20px;
-  text-align: right;
-  color: #ffffff;
-}
-/* Penanda status = TEKS biasa (✓ lewat / ▶ kini / ➜ berikutnya).
-   Bukan warna/class — dua jalur itu bermasalah di toolchain & runtime
-   GT 7 Pro (lihat komentar index.hml). */
-.sel-penanda {
-  width: 22px;
-  font-size: 16px;
-  color: #9ed4ff;
   text-align: center;
 }
 
 /* CATATAN FINAL: palet per-status via binding atribut kustom DIHAPUS —
-   runtime GT 7 Pro mengabaikannya. Status cukup ditandai teks ✓/▶/➜. */
+   runtime GT 7 Pro mengabaikannya. Penanda ✓/▶/➜ juga DIHAPUS sesuai
+   permintaan: kotak cukup menampilkan "Subuh-04:16". */
