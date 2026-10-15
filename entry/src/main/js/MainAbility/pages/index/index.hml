@@ -1,22 +1,19 @@
 <!--
   ============================================================================
-  index.hml — LAYAR UTAMA "KAPAN SOLAT" (versi bersih utk LegacyCompileLiteJS)
+  index.hml — LAYAR UTAMA "KAPAN SOLAT" (LAYAR BULAT GT 7 Pro)
   ============================================================================
-  Target layar GT 7 Pro 454x454 px. Aturan LiteWearable yang DIPATUHI KETAT:
-    - TIDAK ada data binding pada atribut `class` (dilarang compiler) →
-      kelas di sini HANYA string statis; warna per-status dibawa lewat
-      ATRIBUT tag tunggal (background-color, color) dengan binding — pola
-      resmi yang sudah terbukti lolos build + render di jam pengguna.
-    - TIDAK memakai atribut kustom `lines` / `text-overflow` pada <text>
-      (memicu warning "use customize attr") → semua teks pendek dan diberi
-      width eksplisit sehingga tidak perlu pemotongan baris.
-    - Setiap elemen punya lebar/tinggi tetap → layout stabil & ter-center.
+  Panel 454x454 px ≈ 242x242 dp. Aturan LiteWearable yang DIPATUHI KETAT:
+    - TIDAK ada data binding pada atribut `class` (LegacyCompileLiteJS
+      menolak mutlak) → kelas HANYA string statis; warna per-status dibawa
+      lewat ATRIBUT tag tunggal (background-color, color) dengan binding —
+      pola resmi yang terbukti lolos build + render di jam pengguna.
+    - TIDAK memakai atribut kustom `lines` / `text-overflow`.
+    - Setiap elemen punya lebar/tinggi eksplisit (dp) + margin aman 10 dp
+      dari tepi → tidak ada yang menempel/menutup ke lengkungan bulat.
 
-  Desain saat ini:
-    - BOX tanggal+jam → BOX "Menuju ..." (3 baris bertumpuk, font jam kecil)
-      → GRID 2 kolom waktu sholat (nama + jam TERBACA penuh);
-    - Tidak ada penanda centang/panah/dome/border mencolok;
-    - Box status pengingat setelah Isya DIHAPUS.
+  Struktur (semua dalam box, rata tengah, seimbang atas-bawah):
+    BOX tanggal+jam → BOX besar "Menuju ..." (info utama paling jelas)
+    → GRID 2+2+1: Subuh|Zuhur / Ashar|Maghrib / Isya (rata tengah).
   ============================================================================
 -->
 <div class="container">
@@ -27,9 +24,9 @@
     <text class="t-jam">{{ jamSekarang }}</text>
   </div>
 
-  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA ============
-       Tiga baris terpisah — nama, jam masuk, dan hitung mundur
-       tidak mungkin saling menutupi. -->
+  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (info utama) ======
+       Tiga baris bertumpuk berjarak — label, jam masuk, dan hitung
+       mundur tidak mungkin saling menutupi. -->
   <div class="box box-next" if="{{ tersedia }}">
     <text class="t-next-label">{{ pesanNext }}</text>
     <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
@@ -41,21 +38,45 @@
     <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ============ GRID WAKTU SHOLAT (2 KOLOM x 3 BARIS) ============
-       Lima kotak: Subuh|Zuhur / Ashar|Maghrib / Isya.
-       Tiap kotak menampilkan NAMA + JAM masuknya dengan kontras penuh.
-
-       Catatan teknis PENTING (hasil build DevEco pengguna):
-       LegacyCompileLiteJS MELARANG data binding di atribut `class` dalam
-       bentuk APA pun, termasuk satu token variabel sederhana.
-       Maka warna per-status dibawa lewat ATRIBUT TAG TUNGGAL dengan binding
-       (background-color / color) yang nilainya disiapkan JavaScript — pola
-       resmi liteWearable. Tidak ada atribut kustom lines/text-overflow. -->
+  <!-- ============ GRID WAKTU SHOLAT: BARIS EKSPLISIT 2 + 2 + 1 ============
+       Baris 1: Subuh | Zuhur   Baris 2: Ashar | Maghrib   Baris 3: Isya
+       (kotak ke-5 dibungkus .baris agar posisinya RATA TENGAH layar).
+       Tiap kotak = NAMA + JAM masuk, kontras penuh, tanpa penanda lain.
+       Warna per-status via atribut tag tunggal bernilai hex dari JS. -->
   <div class="grid" if="{{ tersedia }}">
-    <div for="{{ jadwal }}" tid="id" class="sel" background-color="{{ $item.bg }}">
-      <text class="sel-nama" color="{{ $item.warnaNama }}">{{ $item.nama }}</text>
-      <text class="sel-jam" color="{{ $item.warna }}">{{ $item.waktu }}</text>
+
+    <!-- Baris 1 : dua kotak pertama -->
+    <div class="baris">
+      <div class="sel" background-color="{{ jadwal[0].bg }}">
+        <text class="sel-nama" color="{{ jadwal[0].warnaNama }}">{{ jadwal[0].nama }}</text>
+        <text class="sel-jam" color="{{ jadwal[0].warna }}">{{ jadwal[0].waktu }}</text>
+      </div>
+      <div class="sel" background-color="{{ jadwal[1].bg }}">
+        <text class="sel-nama" color="{{ jadwal[1].warnaNama }}">{{ jadwal[1].nama }}</text>
+        <text class="sel-jam" color="{{ jadwal[1].warna }}">{{ jadwal[1].waktu }}</text>
+      </div>
     </div>
+
+    <!-- Baris 2 : dua kotak berikutnya -->
+    <div class="baris">
+      <div class="sel" background-color="{{ jadwal[2].bg }}">
+        <text class="sel-nama" color="{{ jadwal[2].warnaNama }}">{{ jadwal[2].nama }}</text>
+        <text class="sel-jam" color="{{ jadwal[2].warna }}">{{ jadwal[2].waktu }}</text>
+      </div>
+      <div class="sel" background-color="{{ jadwal[3].bg }}">
+        <text class="sel-nama" color="{{ jadwal[3].warnaNama }}">{{ jadwal[3].nama }}</text>
+        <text class="sel-jam" color="{{ jadwal[3].warna }}">{{ jadwal[3].waktu }}</text>
+      </div>
+    </div>
+
+    <!-- Baris 3 : Isya saja — RATA TENGAH -->
+    <div class="baris baris-tengah">
+      <div class="sel" background-color="{{ jadwal[4].bg }}">
+        <text class="sel-nama" color="{{ jadwal[4].warnaNama }}">{{ jadwal[4].nama }}</text>
+        <text class="sel-jam" color="{{ jadwal[4].warna }}">{{ jadwal[4].waktu }}</text>
+      </div>
+    </div>
+
   </div>
 
 </div>

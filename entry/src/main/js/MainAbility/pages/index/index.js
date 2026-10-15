@@ -11,13 +11,16 @@
  *                 latar belakang). Alarm sistem tetap bekerja sendiri.
  * Refresh cukup tiap 30 detik — perubahan menit baru terlihat tiap 1 menit.
  *
- * Perubahan vs versi lama (permintaan pengguna):
- *   - jam pada kartu "Menuju" diperkecil & sejajar label (lihat CSS) agar
- *     tidak menutupi hitung mundur;
- *   - tiap kotak grid = NAMA + JAM sholat (tanpa penanda ✓/▶/➜, tanpa dome);
- *   - box/kotak setelah Isya DIHAPUS (kotak ke-6 grid ikut dihapus — info
- *     sholat berikutnya sudah ada di BOX "Menuju ...");
- *   - seluruh konten di-pusatkan vertikal (lihat CSS .container).
+ * Perubahan vs versi lama (permintaan pengguna — layar BULAT GT 7 Pro):
+ *   - Layout pakai MARGIN AMAN 10 dp dari tepi + lebar konten 222 dp →
+ *     kotak mengisi ruang tanpa menempel lengkungan layar bulat;
+ *   - GRID disusun BARIS EKSPLISIT 2+2+1 (Subuh|Zuhur / Ashar|Maghrib /
+ *     Isya rata tengah) — tiap kotak = NAMA + JAM, font diperbesar
+ *     secukupnya dengan padding dalam → teks UTUH tidak terpotong;
+ *   - daftar `jadwal` dijamin selalu berisi tepat 5 elemen
+ *     (lengkapiJadwal) agar binding `jadwal[n].bg` di HML tak pernah
+ *     membaca undefined;
+ *   - seluruh konten di-pusatkan vertikal & horizontal (CSS .container).
  * ============================================================================
  */
 
@@ -122,7 +125,7 @@ export default {
           warna: c.jam               // color teks jam
         });
       }
-      this.jadwal = daftar;
+      this.jadwal = lengkapiJadwal(daftar);
     } else {
       this.jadwal = [];
       this.pesanNext = '';
@@ -152,6 +155,21 @@ function kelasStatus(status, berikutnya, it) {
   if (berikutnya && !berikutnya.besok && berikutnya.nama === it.nama)
     return 'berikutnya';
   return 'mendatang';
+}
+
+/** Jaminan: daftar jadwal SELALU berisi tepat 5 elemen (Subuh..Isya) agar
+    binding bertingkat `jadwal[n].bg` di index.hml tidak pernah membaca
+    properti dari undefined (penyebab umum render gagal / kotak kosong). */
+function lengkapiJadwal(daftar) {
+  var namaBaku = ['Subuh', 'Zuhur', 'Ashar', 'Maghrib', 'Isya'];
+  var hasil = [];
+  for (var i = 0; i < 5; i++) {
+    hasil.push(daftar[i] || {
+      id: i, nama: namaBaku[i], waktu: '--:--', status: 'mendatang',
+      bg: '#152a45', warnaNama: '#eaf1f8', warna: '#ffffff'
+    });
+  }
+  return hasil;
 }
 
 /** Palet per-status — DIPAKAI SEBAGAI NILAI BINDING atribut tag tunggal

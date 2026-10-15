@@ -1,18 +1,24 @@
 /* ==========================================================================
-   index.css — VERSI BESAR + DI-TENGAH (layar GT 7 Pro 454x454 px)
+   index.css — LAYAR BULAT GT 7 Pro (panel 454x454 px ≈ 242x242 dp)
    ==========================================================================
-   Panel GT 7 Pro 454x454 px ≈ area pakai ±242x242 dp. Permintaan terbaru:
-     - SELURUH tampilan DIPERBEBESAR ±30% dari versi sebelumnya:
-       kotak lebih tinggi, font tanggal/jam/grid diperbesar;
-     - konten tetap di-pusatkan vertikal & horizontal (justify-content:
-       center pada .container);
-     - tiap kotak grid = NAMA + JAM sholat, TANPA garis/centang/dome;
-     - box setelah Isya DIHAPUS (grid hanya 5 waktu sholat).
-   Warna per-status dibawa lewat ATRIBUT tag tunggal dengan binding
-   (background-color / color) yang nilainya disiapkan JavaScript lewat
-   properti bg & warna tiap item — pola resmi LiteWearable; binding
-   ekspresi pada atribut class DILARANG compiler LegacyCompileLiteJS.
-   Hemat baterai AMOLED: tanpa gradien/animasi.
+   Perbaikan sesuai permintaan pengguna:
+     1. Kotak diperbesar mengisi lebar layar — MARGIN AMAN 10 dp tiap sisi
+        (≈18 px ≈ 8% lebar) sehingga TIDAK ADA elemen menempel ke lengkungan
+        layar bulat; lebar konten = 242 - 2*10 = 222 dp.
+     2. Font diperbesar secukupnya + padding dalam kotak → teks UTUH, tidak
+        terpotong/menutupi (label "Menuju Ashar" dan countdown dipisah baris
+        dengan jarak antar-baris yang nyaman).
+     3. Tata letak menyesuaikan lingkaran: semua kotak rata tengah, lebar
+        penuh aman, tinggi blok dieksplisitkan, dan total tinggi konten
+        (±210 dp) < diameter efektif area baca (~220 dp) → kolom muat utuh
+        tanpa scroll & tetap TER-CENTER atas-bawah maupun kiri-kanan.
+   Aturan build yang DIPATUHI KETAT (hasil iterasi DevEco pengguna):
+     - TIDAK ada data binding pada atribut `class` (LegacyCompileLiteJS
+       menolak mutlak) → kelas statis; warna per-status via ATRIBUT tag
+       tunggal (background-color/color) bernilai string hex dari JS.
+     - TIDAK memakai atribut kustom `lines` / `text-overflow`.
+     - TIDAK memakai `flex-grow`; tinggi/lebar selalu eksplisit (dp).
+   Hemat baterai AMOLED: latar hitam murni, tanpa gradien/animasi.
    ========================================================================== */
 
 .container {
@@ -21,120 +27,128 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;          /* ← konten di-tengah vertikal */
-  background-color: #04060b;
-  padding: 6px 8px;
+  background-color: #000000;        /* AMOLED: tepi gelap = menyatu dgn bezel */
+  padding: 10dp;                    /* ← MARGIN AMAN LINGKARAN (kiri-kanan-atas-bawah) */
 }
 
-/* ---------- gaya KOTAK umum ---------- */
+/* ---------- gaya KOTAK umum (lebar penuh area aman) ---------- */
 .box {
-  width: 232px;
-  border-radius: 16px;
+  width: 222dp;                     /* isi ruang, tetap dlm radius aman */
+  border-radius: 16dp;
   border-width: 0px;
   background-color: #101a2b;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 8dp;               /* jarak nyaman antar elemen */
 }
 
-/* ==================== BOX 1: TANGGAL & JAM (diperbesar) ==================== */
+/* ==================== BOX 1: TANGGAL & JAM ==================== */
 .box-tanggal {
-  height: 48px;
+  height: 52dp;
   background-color: #0b1220;
 }
 .t-glav {
-  width: 224px;
-  font-size: 12px;
+  width: 206dp;                     /* padding dalam → teks tak menempel tepi */
+  font-size: 13dp;
   color: #9fb0c3;
   text-align: center;
 }
 .t-jam {
-  width: 224px;
-  font-size: 17px;
+  width: 206dp;
+  font-size: 20dp;
   color: #ffffff;
   text-align: center;
-  margin-top: 2px;
+  margin-top: 3dp;                  /* jarak antar baris */
 }
 
-/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (diperbesar) ============ */
+/* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (info utama) ============
+   Informasi paling penting → tampil PALING BESAR & JELAS. Tiga baris
+   bertumpuk berjarak: label → jam masuk → hitung mundur. Jam dibuat
+   proporsional agar TIDAK menutupi countdown (perbaikan permintaan). */
 .box-next {
-  height: 70px;
+  height: 84dp;
   background-color: #16283f;
 }
-/* tiga baris bertumpuk: label → jam → hitung mundur (tidak saling menutupi) */
 .t-next-label {
-  width: 224px;
-  font-size: 13px;
+  width: 206dp;
+  font-size: 15dp;
   color: #9ed4ff;
   text-align: center;
 }
 .t-next-waktu {
-  width: 224px;
-  font-size: 14px;
+  width: 206dp;
+  font-size: 16dp;                  /* cukup besar, tidak menutupi baris lain */
   color: #ffffff;
   text-align: center;
-  margin-top: 3px;
+  margin-top: 4dp;
 }
 .t-next-sisa {
-  width: 224px;
-  font-size: 12px;
+  width: 206dp;
+  font-size: 14dp;
   color: #ffd166;
   text-align: center;
-  margin-top: 3px;
+  margin-top: 4dp;
 }
 
 /* ==================== BOX: jadwal belum diisi ==================== */
 .box-kosong {
-  height: 64px;
+  height: 64dp;
   background-color: #1d1015;
 }
 .t-kosong {
-  width: 214px;
-  font-size: 14px;
+  width: 202dp;
+  font-size: 13dp;
   color: #ff8a80;
   text-align: center;
 }
 
-/* ============ GRID 2 KOLOM x 3 BARIS: NAMA + JAM SHOLAT ============ */
+/* ============ GRID 2+2+1: BARIS EKSPLISIT (nama + jam sholat) ============
+   Baris disusun manual di HML (bukan for-loop) agar posisi tiap kotak
+   PASTI: baris 1-2 dua kolom seimbang, baris 3 satu kotak RATA TENGAH. */
 .grid {
-  width: 232px;
-  height: 120px;                    /* 3 baris x (32px kotak + 8px jarak) */
+  width: 222dp;
+  height: 132dp;                    /* 3 baris x (36dp + 8dp jarak) */
+  flex-direction: column;
+}
+.baris {
+  width: 222dp;
+  height: 44dp;                     /* 36dp kotak + 8dp jarak bawah */
   flex-direction: row;
-  flex-wrap: wrap;
   justify-content: space-between;
+}
+.baris-tengah {
+  justify-content: center;          /* Isya di tengah layar bulat */
 }
 .sel {
   /* Kotak bersih: TANPA border/dome/penanda — fokus keterbacaan jadwal */
-  width: 112px;
-  height: 32px;
-  border-radius: 14px;
+  width: 107dp;
+  height: 36dp;
+  border-radius: 14dp;
   border-width: 0px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-bottom: 8px;
-  background-color: #152a45;        /* default = mendatang */
+  padding-left: 10dp;               /* padding dalam → teks tak menempel */
+  padding-right: 10dp;
+  background-color: #152a45;        /* default = mendatang (binding menimpa) */
 }
 .sel-nama {
-  width: 50px;
-  font-size: 12px;
+  width: 52dp;                      /* "Maghrib" (7 karakter) muat utuh */
+  font-size: 13dp;
   color: #eaf1f8;
 }
 .sel-jam {
-  width: 46px;
-  font-size: 13px;
+  width: 35dp;                      /* "04:21" muat utuh */
+  font-size: 14dp;
   text-align: right;
   color: #ffffff;
 }
 
 /* ---------- CATATAN WARNA PER-STATUS ------------------------------------
-   Compiler LegacyCompileLiteJS MELARANG data binding pada atribut class
-   dalam bentuk apa pun (percobaan 'class="sel {{ $item.kelas }}"' → ERROR
-   build). Solusi final: warna per-status dibawa lewat ATRIBUT tag tunggal
-   dengan binding (background-color / color) yang nilainya disiapkan
-   JavaScript (fungsi warnaStatus di index.js). Kelas CSS di bawah hanya
-   menjadi nilai DEFAULT/latar dasar; atribut binding akan menimpanya saat
+   Binding diekspresi pada atribut class DILARANG compiler → warna per-status
+   dibawa lewat atribut tag tunggal (background-color / color) yang nilainya
+   disiapkan JavaScript (fungsi warnaStatus di index.js) sebagai string hex.
+   Nilai CSS di atas hanyalah default/latar dasar; binding menimpanya saat
    render. Tidak ada atribut kustom lines/text-overflow. */
 
