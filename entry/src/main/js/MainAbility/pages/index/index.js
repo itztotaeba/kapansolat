@@ -12,12 +12,13 @@
  *     subuhTeks ... isyaTeks — masing-masing SATU string gabungan
  *     "Nama-JJ:MM" (mis. 'Subuh-04:16'). Penanda status ✓/▶/➜ DIHAPUS
  *     sesuai permintaan pengguna.
- *   BUG "hanya Subuh & Zuhur yang tampil" (menetap hingga PR#27): ternyata
- *   dipicu struktur grid bertingkat (div .baris > div .sel > text) —
- *   firmware GT 7 Pro hanya me-render baris pertama. Kini HML memakai 5
- *   <text> LANGSUNG sebagai anak .grid (satu baris penuh per waktu), pola
- *   paling datar yang selalu ter-render. Sisi JS tidak berubah: kelima
- *   field Teks SELALU di-assign tiap refresh (dibuktikan simulasi node).
+ *   BUG "hanya Subuh & Zuhur yang tampil": dipicu pembungkus div bersarang
+ *   di dalam tiap baris grid — firmware GT 7 Pro berhenti me-render setelah
+ *   kedalaman tertentu. Kini layout 3 baris x 2 kolom dengan DUA <text>
+ *   LANGSUNG sebagai anak div.baris (tanpa div .sel), kedalaman identik
+ *   dengan header yang selalu aman. Sisi JS: enam field sel1Teks..sel6Teks
+ *   SELALU di-assign tiap refresh; sel6Teks = '' (kolom kanan bawah kosong
+ *   sesuai permintaan). Format tetap "Nama-JJ:MM", tanpa penanda ✓/▶/➜.
  *   Pola binding string skalar adalah yang paling dasar & selalu berhasil
  *   di semua versi liteWearable.
  *
@@ -49,13 +50,13 @@ export default {
     waktuBerikutnya: '',            // '15:09'
     sisaWaktu: '',                  // '1 jam 15 menit lagi'
 
-    // ---- Grid 5 waktu: SATU string gabungan "Nama-JJ:MM" per kotak ----
-    // (Penanda ✓/▶/➜ dihapus sesuai permintaan; struktur 1-teks menjamin
-    //  kelima kotak ter-render — versi 3-kolom sebelumnya bikin sebagian
-    //  kotak hilang hanya menampilkan Subuh & Zuhur di GT 7 Pro.)
-    subuhTeks: 'Subuh--:--',    zuhurTeks: 'Zuhur--:--',
-    asharTeks: 'Ashar--:--',    maghribTeks: 'Maghrib--:--',
-    isyaTeks: 'Isya--:--'
+    // ---- Grid 3 baris x 2 kolom: SATU string gabungan "Nama-JJ:MM" ----
+    // Urutan sel: 1=Subuh 2=Zuhur 3=Ashar 4=Maghrib 5=Isya 6=KOSONG('').
+    // Penanda ✓/▶/➜ dihapus sesuai permintaan; dua <text> langsung per
+    // baris menjamin KELIMA waktu ter-render di GT 7 Pro.
+    sel1Teks: 'Subuh--:--',  sel2Teks: 'Zuhur--:--',
+    sel3Teks: 'Ashar--:--',  sel4Teks: 'Maghrib--:--',
+    sel5Teks: 'Isya--:--',   sel6Teks: ''
   },
 
   onInit() {
@@ -108,8 +109,9 @@ export default {
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
       for (var i = 0; i < KEYS.length; i++) {
-        this[KEYS[i] + 'Teks'] = Capital(KEYS[i]) + '--:--';
+        this['sel' + (i + 1) + 'Teks'] = Capital(KEYS[i]) + '--:--';
       }
+      this.sel6Teks = '';            // kolom kanan bawah memang kosong
       return;
     }
 
@@ -124,15 +126,16 @@ export default {
       this.sisaWaktu = 'Jadwal hari ini selesai';
     }
 
-    // ---- Grid 5 waktu: SATU string gabungan per kotak, format "Nama-JJ:MM"
-    //      (mis. 'Subuh-04:16'). Kelima key KEYS selalu di-assign tiap
-    //      refresh — tanpa penanda ✓/▶/➜, sesuai permintaan pengguna. ----
+    // ---- Grid 3x2: sel1..sel5 = "Nama-JJ:MM" (mis. 'Subuh-04:16'),
+    //      sel6 KOSONG. Kelima waktu SELALU di-assign tiap refresh —
+    //      tanpa penanda ✓/▶/➜, sesuai permintaan pengguna. ----
     for (var j = 0; j < KEYS.length; j++) {
       var it = (j < st.daftar.length) ? st.daftar[j] : null;
       var nama = it ? it.nama : NAMA_TAMPIL[KEYS[j]];
       var jam = (it && it.waktu) ? it.waktu : '--:--';
-      this[KEYS[j] + 'Teks'] = nama + '-' + jam;
+      this['sel' + (j + 1) + 'Teks'] = nama + '-' + jam;
     }
+    this.sel6Teks = '';
   }
 };
 
