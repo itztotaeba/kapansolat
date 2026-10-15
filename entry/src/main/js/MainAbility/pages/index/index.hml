@@ -11,8 +11,8 @@
        lolos build tetapi runtime liteWearable GT 7 Pro MENGABAIKANNYA →
        isi kotak jadi kosong/hilang sebagian (penyebab "hanya Subuh & Zuhur",
        lalu "kosong semua").
-    3) For-loop `for="{{ jadwal }}"` dengan binding bersarang di dalamnya
-       juga tidak stabil per-render-nya di firmware ini.
+    3) For-loop dengan binding bersarang di dalamnya juga tidak stabil
+       per-render-nya di firmware ini (dihindari total).
 
   Solusi definitive: SEMUA elemen ditulis STATIS — 5 nama sholat dan 5 jam
   diikat sebagai string biasa ({{ namaSubuh }}, {{ jamSubuh }}, dst.), pola
