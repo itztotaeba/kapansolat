@@ -106,6 +106,9 @@
 /* ============ GRID 2+2+1: BARIS EKSPLISIT (nama + jam sholat) ============
    Baris disusun manual di HML (bukan for-loop wrap) agar posisi tiap kotak
    PASTI: baris 1-2 dua kolom seimbang, baris 3 satu kotak RATA TENGAH. */
+/* Pembungkus hasil <div for>: tidak menambah tinggi sendiri */
+.grid-item { width: 207px; height: 42px; }
+
 .grid {
   width: 426px;
   height: 150px;                    /* 3 baris x 50px */
