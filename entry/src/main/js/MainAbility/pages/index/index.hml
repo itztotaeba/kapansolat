@@ -15,19 +15,25 @@
        per-render-nya di firmware ini (dihindari total).
 
   Solusi definitive: SEMUA elemen ditulis STATIS — 5 nama sholat dan 5 jam
-  diikat sebagai string biasa ({{ namaSubuh }}, {{ jamSubuh }}, dst.), pola
-  paling dasar yang selalu berhasil di seluruh versi liteWearable. Warna
-  tiap kotak memakai kelas CSS statis (tidak berubah per-status), sedangkan
-  STATUS ditandai lewat TEKS penanda (✓ lewat / ▶ kini / ➜ nanti) yang ikut
-  di-binding — tetap informatif tanpa atribut kustom sama sekali.
+  diikat sebagai string biasa ({{ subuhTeks }}, {{ zuhurTeks }}, dst.), pola
+  paling dasar yang selalu berhasil di seluruh versi liteWearable. Tiap
+  kotak grid kini berisi SATU teks gabungan "Nama-JJ:MM" (mis. Subuh-04:16)
+  — TANPA penanda ✓/▶/➜ lagi, sesuai permintaan pengguna. Warna tiap kotak
+  memakai kelas CSS statis; atribut id disediakan bila nanti perlu styling
+  per-status via JS (saat ini tidak dipakai — binding warna kustom memang
+  diabaikan runtime GT 7 Pro).
+
+  PERBAIKAN "hanya Subuh & Zuhur yang muncul": penyebabnya struktur 3
+  kolom per kotak (penanda + nama + jam) dengan lebar total mepet 204px →
+  render kolom ke-3 sering hilang di firmware. Kini tiap kotak hanya SATU
+  <text> tunggal → kelima waktu (2+2+1) pasti ter-render.
 
   Aturan lain yang dipatuhi: tanpa satuan dp, tanpa lines/text-overflow,
-  tanpa flex-grow; lebar/tinggi eksplisit px. Margin aman lingkaran kini
-  16px vertikal / 24px horizontal; semua box diperkecil ±30% dari revisi
-  "box besar" sebelumnya (box tanggal h74, box "Menuju" h108, grid sel
-  h44) — kompromi: tetap lebih besar dari versi asli yang terlalu kecil,
-  tapi tidak lagi tampak kacau; blok UI terpusat dan muat penuh
-  466x466 TANPA terpotong.
+  tanpa flex-grow; lebar/tinggi eksplisit px. Margin aman lingkaran 16px
+  vertikal / 24px horizontal; box tanggal h74; box "Menuju" DIKECILKAN
+  lagi h108 → h80 (tiga baris berpadat 2px, font 18/24/14px — masih jelas
+  dibaca); grid sel h44. Rekap tinggi: 16+74+10+80+10+144+16 = 350px ≤
+  466px → blok UI terpusat vertikal, muat penuh TANPA terpotong.
   ============================================================================
 -->
 <div class="container">
@@ -38,7 +44,7 @@
     <text class="t-jam">{{ jamSekarang }}</text>
   </div>
 
-  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (info utama) ====== -->
+  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (dikecilkan) ====== -->
   <div class="box box-next" if="{{ tersedia }}">
     <text class="t-next-label">{{ pesanNext }}</text>
     <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
@@ -52,45 +58,39 @@
 
   <!-- ============ GRID 5 WAKTU SHOLAT — BARIS EKSPLISIT 2+2+1 ============
        Baris 1: Subuh | Zuhur   Baris 2: Ashar | Maghrib   Baris 3: Isya
-       Tiap kotak: penanda status (teks) + NAMA + JAM masuk.
-       Semua binding berupa string skalar sederhana — TIDAK ada for-loop,
+       Tiap kotak kini hanya SATU <text> gabungan "Nama-JJ:MM"
+       (mis. Subuh-04:16) — tidak ada lagi penanda ✓/▶/➜ sebelum nama.
+       Struktur 1-teks inilah yang menjamin KELIMA waktu selalu ter-render
+       (versi 3-kolom sebelumnya bikin Ashar/Maghrib/Isya hilang di GT 7 Pro).
+       id unik disediakan utk styling per-element opsional (tidak dipakai).
+       Semua binding tetap string skalar sederhana — TIDAK ada for-loop,
        TIDAK ada binding class, TIDAK ada atribut kustom. -->
   <div class="grid" if="{{ tersedia }}">
 
     <!-- Baris 1: Subuh | Zuhur -->
     <div class="baris">
       <div class="sel">
-        <text class="sel-penanda">{{ penandaSubuh }}</text>
-        <text class="sel-nama">{{ namaSubuh }}</text>
-        <text class="sel-jam">{{ jamSubuh }}</text>
+        <text id="tSubuh" class="sel-gabungan">{{ subuhTeks }}</text>
       </div>
       <div class="sel">
-        <text class="sel-penanda">{{ penandaZuhur }}</text>
-        <text class="sel-nama">{{ namaZuhur }}</text>
-        <text class="sel-jam">{{ jamZuhur }}</text>
+        <text id="tZuhur" class="sel-gabungan">{{ zuhurTeks }}</text>
       </div>
     </div>
 
     <!-- Baris 2: Ashar | Maghrib -->
     <div class="baris">
       <div class="sel">
-        <text class="sel-penanda">{{ penandaAshar }}</text>
-        <text class="sel-nama">{{ namaAshar }}</text>
-        <text class="sel-jam">{{ jamAshar }}</text>
+        <text id="tAshar" class="sel-gabungan">{{ asharTeks }}</text>
       </div>
       <div class="sel">
-        <text class="sel-penanda">{{ penandaMaghrib }}</text>
-        <text class="sel-nama">{{ namaMaghrib }}</text>
-        <text class="sel-jam">{{ jamMaghrib }}</text>
+        <text id="tMaghrib" class="sel-gabungan">{{ maghribTeks }}</text>
       </div>
     </div>
 
     <!-- Baris 3: Isya (rata tengah layar bulat) -->
     <div class="baris baris-tengah">
       <div class="sel">
-        <text class="sel-penanda">{{ penandaIsya }}</text>
-        <text class="sel-nama">{{ namaIsya }}</text>
-        <text class="sel-jam">{{ jamIsya }}</text>
+        <text id="tIsya" class="sel-gabungan">{{ isyaTeks }}</text>
       </div>
     </div>
 

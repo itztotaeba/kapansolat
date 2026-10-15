@@ -9,7 +9,10 @@
  *   - For-loop bersarang → tidak stabil per-render di firmware ini.
  *   Solusi: HML murni statis; JS hanya menyiapkan STRING BIASA per-field:
  *     tanggalHariIni, jamSekarang, pesanNext, waktuBerikutnya, sisaWaktu,
- *     namaSubuh/jamSubuh/penandaSubuh ... namaIsya/jamIsya/penandaIsya.
+ *     subuhTeks ... isyaTeks — masing-masing SATU string gabungan
+ *     "Nama-JJ:MM" (mis. 'Subuh-04:16'). Penanda status ✓/▶/➜ DIHAPUS
+ *     sesuai permintaan pengguna; struktur 1-teks per kotak juga
+ *     memperbaiki bug "hanya Subuh & Zuhur yang ter-render".
  *   Pola binding string skalar adalah yang paling dasar & selalu berhasil
  *   di semua versi liteWearable.
  *
@@ -23,6 +26,7 @@
  */
 
 import { statusHariIni, formatTanggalID } from '../../common/waktu.js';
+import { NAMA_TAMPIL } from '../../common/jadwal-sholat.js';
 import { aktifkanSemuaMetode, hentikanPemantauan } from '../../common/pengingat.js';
 import { daftarkanKonteksAlarm, getarPanjang } from '../../common/device-api.js';
 
@@ -40,12 +44,13 @@ export default {
     waktuBerikutnya: '',            // '15:09'
     sisaWaktu: '',                  // '1 jam 15 menit lagi'
 
-    // ---- Grid 5 waktu: SEMUA field string skalar statis ----
-    namaSubuh: 'Subuh',    jamSubuh: '--:--',    penandaSubuh: '',
-    namaZuhur: 'Zuhur',    jamZuhur: '--:--',    penandaZuhur: '',
-    namaAshar: 'Ashar',    jamAshar: '--:--',    penandaAshar: '',
-    namaMaghrib: 'Maghrib', jamMaghrib: '--:--', penandaMaghrib: '',
-    namaIsya: 'Isya',      jamIsya: '--:--',     penandaIsya: ''
+    // ---- Grid 5 waktu: SATU string gabungan "Nama-JJ:MM" per kotak ----
+    // (Penanda ✓/▶/➜ dihapus sesuai permintaan; struktur 1-teks menjamin
+    //  kelima kotak ter-render — versi 3-kolom sebelumnya bikin sebagian
+    //  kotak hilang hanya menampilkan Subuh & Zuhur di GT 7 Pro.)
+    subuhTeks: 'Subuh--:--',    zuhurTeks: 'Zuhur--:--',
+    asharTeks: 'Ashar--:--',    maghribTeks: 'Maghrib--:--',
+    isyaTeks: 'Isya--:--'
   },
 
   onInit() {
@@ -93,13 +98,12 @@ export default {
     this.tidakTersedia = !st.tersedia;
 
     if (!st.tersedia) {
-      // Jadwal belum diisi untuk hari ini → reset jam grid ke '--:--'.
+      // Jadwal belum diisi untuk hari ini → reset teks grid ke '--:--'.
       this.pesanNext = '';
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
       for (var i = 0; i < KEYS.length; i++) {
-        this['jam' + Capital(KEYS[i])] = '--:--';
-        this['penanda' + Capital(KEYS[i])] = '';
+        this[KEYS[i] + 'Teks'] = Capital(KEYS[i]) + '--:--';
       }
       return;
     }
@@ -115,13 +119,14 @@ export default {
       this.sisaWaktu = 'Jadwal hari ini selesai';
     }
 
-    // ---- Grid 5 waktu: isi per-field string (tanpa array/binding kompleks) ----
-    for (var j = 0; j < st.daftar.length && j < 5; j++) {
-      var it = st.daftar[j];
-      var C = Capital(it.key);                       // 'subuh' -> 'Subuh'
-      this['nama' + C] = it.nama;                    // 'Subuh'
-      this['jam' + C] = it.waktu || '--:--';         // '04:31' ← JAM SELALU ADA
-      this['penanda' + C] = penandaStatus(it.status, st.berikutnya, it);
+    // ---- Grid 5 waktu: SATU string gabungan per kotak, format "Nama-JJ:MM"
+    //      (mis. 'Subuh-04:16'). Kelima key KEYS selalu di-assign tiap
+    //      refresh — tanpa penanda ✓/▶/➜, sesuai permintaan pengguna. ----
+    for (var j = 0; j < KEYS.length; j++) {
+      var it = (j < st.daftar.length) ? st.daftar[j] : null;
+      var nama = it ? it.nama : NAMA_TAMPIL[KEYS[j]];
+      var jam = (it && it.waktu) ? it.waktu : '--:--';
+      this[KEYS[j] + 'Teks'] = nama + '-' + jam;
     }
   }
 };
@@ -136,17 +141,6 @@ function aman(fn) {
   return function () {
     try { fn(); } catch (e) { console.warn('[index] timer dicegat: ' + e); }
   };
-}
-
-/** Penanda STATUS sebagai TEKS biasa (bukan warna/class — keduanya bermasalah
-    di toolchain/runtime GT 7 Pro):
-      ✓ = sudah lewat    ▶ = sedang berlangsung (masa H-10 mnt)
-      ➜ = sholat berikutnya    (kosong = masih mendatang) */
-function penandaStatus(status, berikutnya, it) {
-  if (status === 'lewat') return '✓';
-  if (status === 'berlangsung') return '▶';
-  if (berikutnya && !berikutnya.besok && berikutnya.nama === it.nama) return '➜';
-  return '';
 }
 
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */
