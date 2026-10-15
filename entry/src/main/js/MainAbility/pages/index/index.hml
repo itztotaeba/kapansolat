@@ -14,18 +14,18 @@
        <text> lolos build tetapi runtime liteWearable MENGABAIKANNYA →
        kotak tampil kosong/sebagian.
     3) For-loop dengan binding bersarang tidak stabil per-render → hindari.
-    4) Penyebab bug lama "hanya Subuh & Zuhur": tiap KOTAK dibungkus SATU
-       DIV lagi (div.baris > div.sel > text = 3 tingkat). Firmware GT 7 Pro
-       hanya me-render baris pertama susunan sedalam itu.
-       Solusi baru: KEDALAMAN SERAGAM — setiap baris adalah div.baris yang
-       berangsurkan DUA <text> LANGSUNG (tidak ada div .sel sama sekali;
-       <text> bukan div sehingga tidak menambah kedalaman render).
-       Kedalaman maksimum identik dengan header (.box > text) yang tidak
-       pernah bermasalah → semua 5 waktu terjamin tampil.
+    4) Riwayat bug "hanya Subuh & Zuhur": muncul saat kedalaman antar-baris
+       TIDAK seragam. Revisi ini memakai pembungkus div.pill untuk SEMUA
+       sel secara IDENTIK (.grid > .baris > .pill > text — kelima sel
+       sama rata), khusus agar teks bisa di-TENGAH-kan terhadap box-nya
+       (permintaan simetri). Karena seragam, firmware me-render semua.
 
   Tiap sel berisi SATU teks gabungan "Nama-JJ:MM" (mis. Subuh-04:16) —
   TANPA penanda ✓/▶/➜, sesuai permintaan. Warna tiap sel memakai kelas
-  CSS statis. Sel ke-6 (kanan bawah) dibiarkan KOSONG seperti diminta.
+  CSS statis. Baris terakhir hanya Isya, satu pill selebar grid, tengah.
+  SIMETRI TEKS: <text> setinggi satu baris saja (30px) di dalam pill
+  52px dengan align-items/justify-content center → tulisan waktu sholat
+  tidak lagi "naik ke atas box", melainkan pas di tengah box.
 
   Ukuran: margin aman lingkaran 16px vertikal / 24px horizontal; box
   tanggal h74; box "Menuju" DIKECILKAN h80 (font 18/24/14px, tetap jelas
@@ -59,23 +59,39 @@
 
   <!-- ============ GRID 5 WAKTU — 2 BARIS x 2 KOLOM + 1 BARIS ISYA ============
       Urutan: [Subuh|Zuhur], [Ashar|Maghrib], [Isya penuh-tengah].
-      Baris Isya: SATU <text> LANGSUNG sebagai anak div.baris (lebar penuh
-      418px) — TANPA div pembungkus ".sel" (pembungkus itulah yang membuat
-      baris ke-2 & ke-3 hilang pada revisi sebelumnya). Kedalaman render
-      seluruh baris identik dengan header (.box > text) yang selalu aman.
-      Sel ke-6 dihapus dari HML; teksnya juga dihapus dari JS.
-      Font TEGAS: font-weight bold + warna putih murni di semua teks. -->
+      PERBAIKAN SIMETRI (permintaan pengguna): sebelumnya tulisan waktu
+      sholat "naik ke atas box" karena <text> setinggi baris (52px) dan
+      firmware tidak menengahkan baseline di kotak setinggi baris.
+      Solusi: tiap <text> kini DIBUNGKUS div.pill (tinggi 52px,
+      align-items/justify-content center) dan teksnya hanya setinggi
+      satu baris (30px) → teks benar-benar CENTER TO BOX di kedua sumbu.
+      Kedalaman render semua baris KINI IDENTIK DAN SERAGAM
+      (.grid > .baris > .pill > text, sama rata pada kelima sel) —
+      gejala lama "hanya Subuh & Zuhur" muncul justru karena kedalaman
+      antar-baris TIDAK seragam; sekarang seragam sehingga aman.
+      Sel ke-6 kosong tetap DIHAPUS; penanda ✓/▶/➜ tetap DIHAPUS —
+      tiap sel cukup "Subuh-04:16". Font TEGAS: bold + putih murni. -->
   <div class="grid" if="{{ tersedia }}">
     <div class="baris">
-      <text id="tSel1" class="sel sel-a">{{ sel1Teks }}</text>
-      <text id="tSel2" class="sel sel-b">{{ sel2Teks }}</text>
+      <div class="pill sel-a">
+        <text id="tSel1" class="sel">{{ sel1Teks }}</text>
+      </div>
+      <div class="pill sel-b">
+        <text id="tSel2" class="sel">{{ sel2Teks }}</text>
+      </div>
     </div>
     <div class="baris">
-      <text id="tSel3" class="sel sel-b">{{ sel3Teks }}</text>
-      <text id="tSel4" class="sel sel-a">{{ sel4Teks }}</text>
+      <div class="pill sel-b">
+        <text id="tSel3" class="sel">{{ sel3Teks }}</text>
+      </div>
+      <div class="pill sel-a">
+        <text id="tSel4" class="sel">{{ sel4Teks }}</text>
+      </div>
     </div>
     <div class="baris">
-      <text id="tSel5" class="sel sel-isya">{{ sel5Teks }}</text>
+      <div class="pill pill-isya sel-isya">
+        <text id="tSel5" class="sel">{{ sel5Teks }}</text>
+      </div>
     </div>
   </div>
 
