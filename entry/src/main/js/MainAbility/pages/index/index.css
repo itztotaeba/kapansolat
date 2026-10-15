@@ -4,20 +4,21 @@
    PENTING: LiteWearable HANYA mendukung satuan PX (default). Satuan 'dp'
    DITOLAK LegacyCompileLiteJS ("The `padding` attribute does not support dp").
    Semua ukuran di bawah ditulis dalam PX AKTUAL panel 466x466 px.
-   Revisi UI "BOX MENUJU DIKECILKAN + GRID 1 TEKS" (feedback pengguna):
+   Revisi UI "BOX MENUJU DIKECILKAN + 5 BARIS JADWAL 1 TEKS" (feedback):
      - Box "Menuju" dikecilkan lagi h108 → h80; font 18/24/14px dengan
        jarak antar baris 2px — semua tulisan tetap jelas terbaca.
-     - Grid: tiap kotak kini SATU <text> gabungan "Nama-JJ:MM"
-       (mis. Subuh-04:16), penanda ✓/▶/➜ DIHAPUS. Ini sekaligus memperbaiki
-       bug "hanya Subuh & Zuhur yang tampil" (struktur 3 kolom mepet 204px
-       bikin kolom ke-3 tidak ter-render di firmware GT 7 Pro).
+     - Grid: LIMA baris penuh, tiap baris SATU <text> gabungan
+       "Nama-JJ:MM" (mis. Subuh-04:16) LANGSUNG di dalam .grid — tanpa div
+       pembungkus ".sel". Pembungkus bertingkat pada pola 2+2+1 (PR#27)
+       ternyata membuat baris ke-2 & ke-3 tidak ter-render di GT 7 Pro
+       (gejala menetap: hanya Subuh & Zuhur). Penanda ✓/▶/➜ DIHAPUS.
      - Margin aman lingkaran: padding 16px atas/bawah, 24px kiri/kanan.
      - Lebar konten = 466 - 2*24 = 418px dipakai SEMUA box dan grid.
      - BOX tanggal+jam (h74) → BOX "Menuju" (h80)
-       → GRID waktu sholat 2+2+1 (3 baris x h48, kotak sel h44).
+       → GRID waktu sholat 5 baris x h46 (= 230px).
      - Rekap tinggi vertikal:
-         16(pad) + 74(box1) + 10 + 80(box2) + 10 + 144(grid) + 16(pad)
-         = 350px ≤ 466px → container justify-content:center sehingga blok
+         16(pad) + 74(box1) + 10 + 80(box2) + 10 + 230(grid) + 16(pad)
+         = 436px ≤ 466px → container justify-content:center sehingga blok
          vertikal TERPUSAT rapi; semua elemen terlihat utuh, TIDAK ADA
          yang terpotong di tepi layar watch.
      - Setiap teks diberi lebar eksplisit lebih kecil dari box-nya dengan
@@ -116,46 +117,38 @@
   text-align: center;
 }
 
-/* ============ GRID 2+2+1: BARIS EKSPLISIT (nama + jam sholat) ============
-   Baris disusun manual di HML (bukan for-loop wrap) agar posisi tiap kotak
-   PASTI: baris 1-2 dua kolom seimbang, baris 3 satu kotak RATA TENGAH. */
+/* ============ GRID 5 WAKTU: LIMA BARIS PENUH, SATU <text> PER BARIS ======
+   PERBAIKAN FINAL bug "hanya Subuh & Zuhur yang tampil" di GT 7 Pro.
+   Riwayat diagnosis:
+     - for-loop        → tidak stabil;   - baris-2-kolom + div ".sel"
+       (pola PR#26/#27) → HANYA baris pertama ter-render (Subuh|Zuhur),
+       baris ke-2/ke-3 hilang oleh firmware.
+   Struktur paling datar yang SELALU berhasil di liteWearable: satu <text>
+   langsung sebagai anak .grid — tanpa div pembungkus apa pun. Maka jadwal
+   kini disajikan sebagai 5 baris penuh berurutan Subuh→Isya, masing-masing
+   SATU teks gabungan "Nama-JJ:MM" (mis. Subuh-04:16), tanpa penanda ✓/▶/➜.
+   Kelas warna latar statis membedakan tiap baris; tidak ada binding class,
+   tidak ada atribut kustom, lebar/tinggi eksplisit px. */
 
 .grid {
   width: 418px;
-  height: 144px;                    /* 3 baris x 48px */
+  height: 230px;                    /* 5 baris x 46px */
+  flex-direction: column;
 }
 .baris {
   width: 418px;
-  height: 48px;                     /* kotak 44px + jarak 4px */
-  flex-direction: row;
-  justify-content: space-between;
-}
-.baris-tengah {
-  justify-content: center;          /* Isya di tengah layar bulat */
-}
-/* ---------- KOTAK GRID (kelas statis murni; TIDAK ada binding class,
-   TIDAK ada atribut kustom background-color/color — keduanya bermasalah
-   di toolchain/runtime GT 7 Pro.) ----------
-   PERBAIKAN "hanya Subuh & Zuhur yang tampil": tiap kotak kini berisi
-   SATU <text> tunggal "Nama-JJ:MM" (bukan 3 kolom penanda+nama+jam yang
-   lebarnya mepet 204px dan bikin kolom ke-3 tidak ter-render). */
-.sel {
-  width: 204px;
-  height: 44px;
-  border-radius: 22px;
-  border-width: 0px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;          /* teks gabungan dirata-tengah kotak */
-  background-color: #152a45;        /* default (bila setStyle gagal) */
-}
-.sel-gabungan {
-  width: 196px;                     /* "Maghrib-17:51" font 20px ≈ 155px → MUAT */
-  font-size: 20px;
+  height: 46px;                     /* h46 = ruang baca nyaman font 22px */
+  border-radius: 23px;              /* pill: radius = setengah tinggi */
+  font-size: 22px;                  /* "Maghrib-17:51" ≈ 170px << 418px → MUAT */
   color: #eaf1f8;
   text-align: center;
 }
+.baris-subuh   { background-color: #12233c; }
+.baris-zuhur   { background-color: #16283f; }
+.baris-ashar   { background-color: #1a2f49; }
+.baris-maghrib { background-color: #16283f; }
+.baris-isya    { background-color: #12233c; }
 
-/* CATATAN FINAL: palet per-status via binding atribut kustom DIHAPUS —
-   runtime GT 7 Pro mengabaikannya. Penanda ✓/▶/➜ juga DIHAPUS sesuai
-   permintaan: kotak cukup menampilkan "Subuh-04:16". */
+/* CATATAN FINAL: div ".sel" dan kelas ".sel-gabungan" DIHAPUS — pembungkus
+   bertingkat itulah yang membuat baris 2 & 3 tidak ter-render. Penanda
+   ✓/▶/➜ juga tetap dihapus: tiap baris cukup "Subuh-04:16". */
