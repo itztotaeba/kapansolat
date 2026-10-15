@@ -39,14 +39,16 @@ export default {
     sisaWaktu: '',       // hitung mundur 'x jam y menit lagi'
     /* Data grid 5 waktu sholat sebagai ARRAY SKALAR sederhana:
        namaJadwal[i]  = 'Subuh'.. ; waktuJadwal[i] = '04:21' ;
-       kelasJadwal[i] = nama kelas status ('mendatang'/'berikutnya'/
-       'berlangsung'/'lewat') → diikat ke class="{{ kelasJadwal[i] }}".
-       Bentuk skalar dipilih karena binding bertingkat objek
-       (jadwal[i].bg) pada atribut kustom terbukti TIDAK ter-render
-       di runtime liteWearable GT 7 Pro (jam sholat tak muncul). */
+       bgJadwal[i]    = hex latar kotak per-status  → diikat ke atribut
+       warnaNama[i]   = hex warna nama               background-color /
+       warnaJam[i]    = hex warna jam                color (binding pada
+       atribut tag tunggal DIDUKUNG; binding pada `class` DITOLAK mutlak
+       oleh LegacyCompileLiteJS — lihat komentar index.hml). */
     namaJadwal: [],
     waktuJadwal: [],
-    kelasJadwal: []
+    bgJadwal: [],
+    warnaNama: [],
+    warnaJam: []
   },
 
   onInit() {
@@ -114,24 +116,31 @@ export default {
         this.sisaWaktu = 'Jadwal hari ini selesai';
       }
 
-      // GRID 5 waktu sholat: tiga array skalar (nama/jam/kelas status).
-      // Kelas dipakai HML sebagai class="{{ kelasJadwal[i] }}" (binding
-      // SATU-token resmi); warna per-status didefinisikan di index.css.
-      var nama = [], jam = [], kelas = [];
+      // GRID 5 waktu sholat: array skalar (nama/jam + warna per-status).
+      // Warna diikat ke ATRIBUT tag tunggal (background-color / color) —
+      // binding `class` ditolak mutlak oleh LegacyCompileLiteJS.
+      var nama = [], jam = [], bg = [], wNama = [], wJam = [];
       for (var i = 0; i < st.daftar.length; i++) {
         var it = st.daftar[i];
-        kelas.push(kelasStatus(it.status, st.berikutnya, it));
+        var w = warnaStatus(kelasStatus(it.status, st.berikutnya, it));
+        bg.push(w.bg);
+        wNama.push(w.nama);
+        wJam.push(w.jam);
         nama.push(it.nama);
         jam.push(it.waktu || '--:--');   // JAM SELALU DITAMPILKAN
       }
-      var genap = lengkapi5(nama, jam, kelas);
+      var genap = lengkapi5(nama, jam, bg, wNama, wJam);
       this.namaJadwal = genap.nama;
       this.waktuJadwal = genap.jam;
-      this.kelasJadwal = genap.kelas;
+      this.bgJadwal = genap.bg;
+      this.warnaNama = genap.warnaNama;
+      this.warnaJam = genap.warnaJam;
     } else {
       this.namaJadwal = [];
       this.waktuJadwal = [];
-      this.kelasJadwal = [];
+      this.bgJadwal = [];
+      this.warnaNama = [];
+      this.warnaJam = [];
       this.pesanNext = '';
       this.waktuBerikutnya = '';
       this.sisaWaktu = '';
@@ -161,25 +170,33 @@ function kelasStatus(status, berikutnya, it) {
   return 'mendatang';
 }
 
-/** Jaminan: ketiga array grid SELALU berisi tepat 5 elemen (Subuh..Isya)
+/** Jaminan: kelima array grid SELALU berisi tepat 5 elemen (Subuh..Isya)
     agar binding `namaJadwal[n]` dst. di index.hml tidak pernah membaca
     indeks kosong (penyebab umum kotak tanpa teks / item hilang). */
-function lengkapi5(nama, jam, kelas) {
+function lengkapi5(nama, jam, bg, wNama, wJam) {
   var namaBaku = ['Subuh', 'Zuhur', 'Ashar', 'Maghrib', 'Isya'];
-  var n = [], j2 = [], k = [];
+  var n = [], j2 = [], b = [], wn = [], wj = [];
   for (var i = 0; i < 5; i++) {
     n.push(nama[i] || namaBaku[i]);
     j2.push(jam[i] || '--:--');
-    k.push(kelas[i] || 'mendatang');
+    b.push(bg[i] || '#152a45');
+    wn.push(wNama[i] || '#dfe7f0');
+    wj.push(wJam[i] || '#ffffff');
   }
-  return { nama: n, jam: j2, kelas: k };
+  return { nama: n, jam: j2, bg: b, warnaNama: wn, warnaJam: wj };
 }
 
-/** Catatan: palet per-status kini TIDAK lagi dikirim JS sebagai string hex
-    ke atribut kustom (runtime mengabaikannya) — warna cukup lewat NAMA
-    KELAS yang dikembalikan kelasStatus() dan didefinisikan di index.css.
-
-*/
+/** Palet per-status → dikirim JS sebagai string hex ke ATRIBUT tag tunggal
+    (background-color pada div, color pada text). Binding class DITOLAK
+    compiler, jadi warna harus lewat jalur atribut — pola resmi liteWearable.
+      mendatang   : biru tenang            berikutnya : biru terang
+      berlangsung : hijau (masa H-10 mnt)  lewat      : abu, tetap terbaca */
+function warnaStatus(kelas) {
+  if (kelas === 'berlangsung') return { bg: '#103524', nama: '#d6ffe9', jam: '#7cf5b8' };
+  if (kelas === 'berikutnya')  return { bg: '#1d3a5f', nama: '#cfe3ff', jam: '#ffffff' };
+  if (kelas === 'lewat')       return { bg: '#23282f', nama: '#9aa4b2', jam: '#9aa4b2' };
+  return { bg: '#152a45', nama: '#dfe7f0', jam: '#ffffff' }; // mendatang
+}
 /** "1 jam 15 menit lagi" (ringkas utk layar jam) */
 function hitungSisa(menit) {
   if (menit <= 0) return 'Tepat waktu!';
