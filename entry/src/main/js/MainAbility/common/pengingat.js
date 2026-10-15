@@ -38,6 +38,7 @@ var UJI_ALARM_MS = 25 * 1000; // jeda uji-alarm setelah modul pertama terdeteksi
 var _timer = null;          // id setInterval aktif
 var _modulTerdeteksiSebelumnya = false; // transisi deteksi → jadwalkan uji alarm
 var _ujiAlarmTerjadwal = false;
+var _ujiAlarmTimer = null;  // id setTimeout uji-alarm (harus bisa dibatalkan)
 var _sudahPicu = {};        // {'YYYY-MM-DD-namaWaktu': true} anti pemicuan ganda
 var _keyHariTerakhir = '';  // deteksi pergantian hari utk pasang ulang alarm B
 var _alarmTerpasangHariIni = ''; // kunci hari saat alarm B sukses terpasang
@@ -94,17 +95,19 @@ function satuKaliCek() {
       console.info('[pengingat] menguji alarm nyata (~25 detik dari sekarang)…');
       ujiAlarmNyata();
     }), UJI_ALARM_MS);
+    // Simpan id agar bisa dibatalkan di hentikanPemantauan (lihat bawah)
+    try { _ujiAlarmTimer = _ujiAlarmTimerRef; } catch (e) { /* noop */ }
   }
   _modulTerdeteksiSebelumnya = tersediaKini;
 
-  // --- METODE A: cari kejadian yang jatuh dalam jendela 10 menit ---
+  // --- METODE A: cari kejadian yang jatuh dalam jendela MENIT_SEBELUM ---
   var kejadian = kejadianPengingat(now, MENIT_SEBELUM);
   for (var i = 0; i < kejadian.length; i++) {
     var ev = kejadian[i];
     var id = ev.id;
     if (_sudahPicu[id]) continue;          // sudah pernah dipicu hari ini
     if (ev.selangMenit >= 0 && ev.selangMenit <= MENIT_SEBELUM + 1) {
-      // TEPAT 10 MENIT (atau kurang) SEBELUM WAKTU MASUK → PICU SEKALI
+      // TEPAT x MENIT (atau kurang) SEBELUM WAKTU MASUK → PICU SEKALI
       _sudahPicu[id] = true;
       var pesan = '⏰ ' + ev.nama + ' ' + MENIT_SEBELUM + ' menit lagi! Waktu masuk: ' + ev.masuk;
       tampilkanNotifikasi({ title: 'Jadwal Sholat', text: pesan });
@@ -128,6 +131,14 @@ export function hentikanPemantauan() {
     clearInterval(_timer);
     _timer = null;
     console.info('[pengingat] Metode A berhenti (hemat baterai)');
+  }
+  // PERBAIKAN kebocoran callback: setTimeout uji-alarm yang masih menggantung
+  // akan tetap menembus walau halaman sudah onHide/destroy — getaran &
+  // notifikasi "hantu" muncul saat aplikasi tertutup. Batalkan sekarang.
+  if (_ujiAlarmTimer !== null) {
+    try { clearTimeout(_ujiAlarmTimer); } catch (e) { /* noop */ }
+    _ujiAlarmTimer = null;
+    _ujiAlarmTerjadwal = false;
   }
 }
 

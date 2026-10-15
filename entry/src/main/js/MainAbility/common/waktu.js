@@ -7,7 +7,26 @@
  * ============================================================================
  */
 
-import { JADWAL_SHOLAT, DAFTAR_WAKTU, NAMA_TAMPIL } from './jadwal-sholat.js';
+import { JADWAL_SHOLAT, DAFTAR_WAKTU, NAMA_TAMPIL, MENIT_SEBELUM } from './jadwal-sholat.js';
+
+/* ---- Indeks jadwal O(1) --------------------------------------------------
+ * cariJadwal() dulu memindai SELURUH array pada setiap pemanggilan; dengan
+ * data 30–400 hari dan siklus cek tiap 30 detik, ini pemborosan CPU di jam.
+ * Peta 'YYYY-MM-DD' -> record dibangun sekali per isi data (penanda panjang
+ * array — pembaruan selalu lewat penggantian blok data + build ulang). */
+var _indeksJadwal = null;
+var _indeksLen = -1;
+function _punyaIndeksJadwal() {
+  if (_indeksJadwal === null || _indeksLen !== JADWAL_SHOLAT.length) {
+    _indeksJadwal = {};
+    for (var i = 0; i < JADWAL_SHOLAT.length; i++) {
+      var r = JADWAL_SHOLAT[i];
+      if (r && typeof r.tanggal === 'string') _indeksJadwal[r.tanggal] = r;
+    }
+    _indeksLen = JADWAL_SHOLAT.length;
+  }
+  return _indeksJadwal;
+}
 
 /* ---------------------- Nama hari & bulan bahasa Indonesia ---------------- */
 export const NAMA_HARI = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -32,15 +51,29 @@ export function formatTanggalID(d) {
   return NAMA_HARI[d.getDay()] + ', ' + d.getDate() + ' ' + NAMA_BULAN[d.getMonth()] + ' ' + d.getFullYear();
 }
 
+/** Cache hasil parsing 'JJ:MM' — waktu yang sama muncul berulang kali tiap
+ *  siklus cek; pemetaan string->menit jauh lebih murah daripada split+parseInt. */
+var _cacheMenit = {};
+var _cacheMenitN = 0;
+
 /** 'JJ:MM' -> total menit sejak tengah malam (0..1439). Tidak valid -> -1 */
 export function timeToMenit(str) {
   if (!str || typeof str !== 'string') return -1;
-  var p = str.split(':');
-  if (p.length !== 2) return -1;
-  var j = parseInt(p[0], 10);
-  var m = parseInt(p[1], 10);
-  if (isNaN(j) || isNaN(m) || j < 0 || j > 23 || m < 0 || m > 59) return -1;
-  return j * 60 + m;
+  if (_cacheMenitN > 512) { _cacheMenit = {}; _cacheMenitN = 0; } // batasi memori
+  var hit = _cacheMenit[str];
+  if (hit !== undefined) return hit;
+  var hasil;
+  if (/^\d{2}:\d{2}$/.test(str)) {
+    // Parsing numerik langsung (tanpa alokasi array split)
+    var jj = (+str.charAt(0)) * 10 + (+str.charAt(1));
+    var mm = (+str.charAt(3)) * 10 + (+str.charAt(4));
+    hasil = (jj <= 23 && mm <= 59) ? jj * 60 + mm : -1;
+  } else {
+    hasil = -1;
+  }
+  _cacheMenit[str] = hasil;
+  _cacheMenitN++;
+  return hasil;
 }
 
 /** Total menit -> 'JJ:MM' */
@@ -71,10 +104,9 @@ export function formatSelang(totalMenit) {
 
 /** Ambil record jadwal untuk tanggal key tertentu; null jika belum diisi */
 export function cariJadwal(keyTanggal) {
-  for (var i = 0; i < JADWAL_SHOLAT.length; i++) {
-    if (JADWAL_SHOLAT[i].tanggal === keyTanggal) return JADWAL_SHOLAT[i];
-  }
-  return null;
+  var idx = _punyaIndeksJadwal();
+  var r = idx[keyTanggal];
+  return r || null;
 }
 
 /** Record jadwal berikutnya setelah `key` yang ada di data; null bila habis */
@@ -110,9 +142,8 @@ export function statusHariIni(now) {
   var kini = menitSekarang(now);
 
   // Bangun daftar 5 waktu + tentukan mana yang berikutnya (termasuk besok Subuh)
-  var besok = new Date(now.getTime());
-  besok.setDate(besok.getDate() + 1);
-  var recBesok = cariJadwal(tanggalKey(besok));
+  var besokD = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 12, 0);
+  var recBesok = cariJadwal(tanggalKey(besokD));
 
   var items = [];
   for (var i = 0; i < DAFTAR_WAKTU.length; i++) {
@@ -135,8 +166,10 @@ export function statusHariIni(now) {
       it.status = 'lewat';
       it.selangMenit = 0;
     } else if (!foundNext) {
-      // waktu berikutnya hari ini
-      it.status = selisih <= 10 ? 'berlangsung' : 'mendatang';
+      // waktu berikutnya hari ini — jendela 'berlangsung' memakai
+      // MENIT_SEBELUM yang sama dengan pengingat (bukan angka 10 patokan),
+      // agar status layar & notifikasi konsisten bila nilai diubah.
+      it.status = selisih <= MENIT_SEBELUM ? 'berlangsung' : 'mendatang';
       it.selangMenit = selisih;
       foundNext = true;
       hasil.berikutnya = it;
@@ -202,6 +235,13 @@ export function kejadianPengingat(now, menitSebelum) {
   var keyBesok = tanggalKey(besokD);
   hariList.push({ rec: cariJadwal(keyBesok), d: besokD, key: keyBesok });
 
+  // Validasi rentang menitSebelum (proteksi input — lihat setMenitSebelum):
+  // nilai non-numerik/ekstrem menghasilkan trigger NaN yang diam-diam membuat
+  // seluruh alarm ditolak firmware. Dibatasi ke rentang waras 0..720 (12 jam).
+  var ms = parseInt(menitSebelum, 10);
+  if (isNaN(ms) || ms < 0) ms = 0;
+  if (ms > 720) ms = 720;
+
   for (var h = 0; h < hariList.length; h++) {
     var hr = hariList[h];
     if (!hr.rec) continue;
@@ -210,11 +250,11 @@ export function kejadianPengingat(now, menitSebelum) {
       var mtMasuk = timeToMenit(hr.rec[k]);
       if (mtMasuk < 0) continue;
       var em = epochMenitPada(hr.d, hr.rec[k]);
-      var selang = (em - menitSebelum) - nowEpoch; // menit menuju trigger dr sekarang
+      var selang = (em - ms) - nowEpoch; // menit menuju trigger dr sekarang
       // Jam/menit LOCAL trigger = waktu masuk dikurangi menitSebelum.
       // Alarm bersifat repeat-harian, jadi nilai "sudah lewat hari ini" pun
       // tetap valid (berbunyi besok pada jam yang sama) → TIDAK dilewati.
-      var trigAbs = mtMasuk - menitSebelum;
+      var trigAbs = mtMasuk - ms;
       var wrap = trigAbs < 0;                       // melewati tengah malam (Subuh)
       var trigNorm = ((trigAbs % 1440) + 1440) % 1440;
       // Untuk Subuh, selang versi "besok" bila trigger hari ini sudah lewat
@@ -225,7 +265,7 @@ export function kejadianPengingat(now, menitSebelum) {
         waktuKey: k,
         nama: NAMA_TAMPIL[k],
         masuk: hr.rec[k],
-        menitSebelum: menitSebelum,
+        menitSebelum: ms,
         triggerJam: Math.floor(trigNorm / 60),
         triggerMenitLokal: trigNorm % 60,
         /* Hari ISO (1=Senin..7=Minggu) tanggal KEY kejadian — dipakai
