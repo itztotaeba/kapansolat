@@ -10,14 +10,12 @@
      - BOX tanggal+jam (h90) → BOX "Menuju" info utama paling besar (h120)
        → GRID waktu sholat 2+2+1 (3 baris x h34, Isya rata tengah).
      - Total tinggi ±372px < 466px → muat TANPA scroll & ter-center.
-   Aturan build yang DIPATUHI KETAT (hasil iterasi DevEco pengguna):
-     - Binding class HANYA bentuk SATU-token resmi: class="{{ x }}"
-       (bentuk dua token "statis {{dinamis}}" DITOLAK compiler).
-     - TIDAK memakai atribut kustom background-color/color pada div/text
-       dengan binding — runtime mengabaikannya sehingga isi kotak hilang.
-       Warna per-status kini lewat kelas CSS (.berikutnya/.lewat/dsb.).
-     - TIDAK memakai atribut kustom `lines` / `text-overflow`.
-     - TIDAK memakai `flex-grow`; tinggi/lebar selalu eksplisit (PX).
+   Aturan build/runtime yang DIPATUHI KETAT (hasil iterasi DevEco pengguna):
+     - TIDAK ada data binding pada atribut class (bentuk apa pun) -> ERROR.
+     - TIDAK ada binding atribut kustom background-color/color pada div/text
+       (runtime GT 7 Pro mengabaikannya -> kotak kosong).
+     - TIDAK memakai for-loop utk grid; HML statis + binding string skalar.
+     - TIDAK memakai atribut lines/text-overflow, tidak flex-grow, tidak dp.
    Hemat baterai AMOLED: latar hitam murni, tanpa gradien/animasi.
    ========================================================================== */
 
@@ -106,8 +104,6 @@
 /* ============ GRID 2+2+1: BARIS EKSPLISIT (nama + jam sholat) ============
    Baris disusun manual di HML (bukan for-loop wrap) agar posisi tiap kotak
    PASTI: baris 1-2 dua kolom seimbang, baris 3 satu kotak RATA TENGAH. */
-/* Pembungkus hasil <div for>: tidak menambah tinggi sendiri */
-.grid-item { width: 207px; height: 42px; }
 
 .grid {
   width: 426px;
@@ -122,9 +118,9 @@
 .baris-tengah {
   justify-content: center;          /* Isya di tengah layar bulat */
 }
-/* ---------- KOTAK GRID (class statis 'sel'; warna per-status via
-   ATRIBUT background-color/color yang di-binding dari index.js —
-   binding pada atribut `class` DITOLAK LegacyCompileLiteJS) ------- */
+/* ---------- KOTAK GRID (kelas statis murni; TIDAK ada binding class,
+   TIDAK ada atribut kustom background-color/color — keduanya bermasalah
+   di toolchain/runtime GT 7 Pro. Status ditandai lewat TEKS penanda.) ---- */
 .sel {
   width: 207px;
   height: 42px;
@@ -140,16 +136,23 @@
 .sel-nama {
   width: 100px;                      /* "Maghrib" muat utuh, tak terpotong */
   font-size: 20px;
-  color: #eaf1f8;                    /* fallback; ditimpa binding color JS */
+  color: #eaf1f8;
 }
 .sel-jam {
   width: 64px;                      /* "04:21" muat utuh */
   font-size: 21px;
   text-align: right;
-  color: #ffffff;                    /* fallback; ditimpa binding color JS */
+  color: #ffffff;
+}
+/* Penanda status = TEKS biasa (✓ lewat / ▶ kini / ➜ berikutnya).
+   Bukan warna/class — dua jalur itu bermasalah di toolchain & runtime
+   GT 7 Pro (lihat komentar index.hml). */
+.sel-penanda {
+  width: 24px;
+  font-size: 18px;
+  color: #9ed4ff;
+  text-align: center;
 }
 
-/* Palet per-status kini DIKIRIM JS (fungsi warnaStatus di index.js)
-   sebagai string hex ke atribut tag tunggal:
-     mendatang #152a45 | berikutnya #1d3a5f | berlangsung #103524
-     lewat #23282f (+ teks abu #9aa4b2 agar tetap terbaca). */
+/* CATATAN FINAL: palet per-status via binding atribut kustom DIHAPUS —
+   runtime GT 7 Pro mengabaikannya. Status cukup ditandai teks ✓/▶/➜. */
