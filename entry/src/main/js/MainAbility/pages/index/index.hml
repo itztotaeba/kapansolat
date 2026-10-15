@@ -2,14 +2,15 @@
   ============================================================================
   index.hml — LAYAR UTAMA "KAPAN SOLAT" (LAYAR BULAT GT 7 Pro)
   ============================================================================
-  Panel 454x454 px ≈ 242x242 dp. Aturan LiteWearable yang DIPATUHI KETAT:
+  Panel fisik 454x454 PX (LiteWearable hanya mendukung satuan px pada CSS;
+  'dp' DITOLAK compiler). Aturan LiteWearable yang DIPATUHI KETAT:
     - TIDAK ada data binding pada atribut `class` (LegacyCompileLiteJS
       menolak mutlak) → kelas HANYA string statis; warna per-status dibawa
       lewat ATRIBUT tag tunggal (background-color, color) dengan binding —
       pola resmi yang terbukti lolos build + render di jam pengguna.
     - TIDAK memakai atribut kustom `lines` / `text-overflow`.
-    - Setiap elemen punya lebar/tinggi eksplisit (dp) + margin aman 10 dp
-      dari tepi → tidak ada yang menempel/menutup ke lengkungan bulat.
+    - Setiap elemen punya lebar/tinggi eksplisit (px) + margin aman 16px
+      keliling → tidak ada yang menempel/menutup ke lengkungan bulat.
 
   Struktur (semua dalam box, rata tengah, seimbang atas-bawah):
     BOX tanggal+jam → BOX besar "Menuju ..." (info utama paling jelas)
