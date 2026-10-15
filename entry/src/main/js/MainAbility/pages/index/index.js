@@ -11,8 +11,13 @@
  *     tanggalHariIni, jamSekarang, pesanNext, waktuBerikutnya, sisaWaktu,
  *     subuhTeks ... isyaTeks — masing-masing SATU string gabungan
  *     "Nama-JJ:MM" (mis. 'Subuh-04:16'). Penanda status ✓/▶/➜ DIHAPUS
- *     sesuai permintaan pengguna; struktur 1-teks per kotak juga
- *     memperbaiki bug "hanya Subuh & Zuhur yang ter-render".
+ *     sesuai permintaan pengguna.
+ *   BUG "hanya Subuh & Zuhur yang tampil" (menetap hingga PR#27): ternyata
+ *   dipicu struktur grid bertingkat (div .baris > div .sel > text) —
+ *   firmware GT 7 Pro hanya me-render baris pertama. Kini HML memakai 5
+ *   <text> LANGSUNG sebagai anak .grid (satu baris penuh per waktu), pola
+ *   paling datar yang selalu ter-render. Sisi JS tidak berubah: kelima
+ *   field Teks SELALU di-assign tiap refresh (dibuktikan simulasi node).
  *   Pola binding string skalar adalah yang paling dasar & selalu berhasil
  *   di semua versi liteWearable.
  *
