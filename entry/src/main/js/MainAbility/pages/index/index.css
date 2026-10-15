@@ -119,14 +119,10 @@
 .baris-tengah {
   justify-content: center;          /* Isya di tengah layar bulat */
 }
-.mendatang,
-.berikutnya,
-.berlangsung,
-.lewat {
-  /* Struktur & ukuran kotak — identik untuk SEMUA status.
-     Kelas status diikat via class="{{ kelasJadwal[i] }}" (binding
-     SATU-token resmi LiteWearable); hanya background-color & warna
-     teks yang berbeda per kelas di bawah. */
+/* ---------- KOTAK GRID (class statis 'sel'; warna per-status via
+   ATRIBUT background-color/color yang di-binding dari index.js —
+   binding pada atribut `class` DITOLAK LegacyCompileLiteJS) ------- */
+.sel {
   width: 207px;
   height: 42px;
   border-radius: 21px;
@@ -136,32 +132,21 @@
   justify-content: space-between;
   padding-left: 14px;               /* padding dalam → teks tak menempel */
   padding-right: 14px;
-  background-color: #152a45;        /* default = mendatang */
+  background-color: #152a45;        /* default (bila binding belum jalan) */
 }
 .sel-nama {
   width: 100px;                      /* "Maghrib" muat utuh, tak terpotong */
   font-size: 20px;
-  color: #eaf1f8;
+  color: #eaf1f8;                    /* fallback; ditimpa binding color JS */
 }
 .sel-jam {
   width: 64px;                      /* "04:21" muat utuh */
   font-size: 21px;
   text-align: right;
-  color: #ffffff;
+  color: #ffffff;                    /* fallback; ditimpa binding color JS */
 }
 
-/* ---------- WARNA PER-STATUS (kelas lengkap, menimpa default .sel) ----
-   mendatang   : biru tenang          berikutnya : biru terang (sholat
-                 menuju waktu ini)                berikutnya + jam putih
-   berlangsung : hijau (masa H-10 mnt) lewat     : abu redup, tetap terbaca
-   Catatan: properti kelas status HARUS ditulis lengkap (bukan menambah
-   .sel) karena binding class satu-token mengganti SELURUH kelas elemen —
-   '.sel' statis tidak lagi terpasang saat binding aktif. */
-.mendatang   { background-color: #152a45; }
-.berikutnya  { background-color: #1d3a5f; }
-.berlangsung { background-color: #103524; }
-.berlangsung .sel-nama { color: #d6ffe9; }
-.berlangsung .sel-jam  { color: #7cf5b8; }
-.lewat       { background-color: #23282f; }
-.lewat .sel-nama       { color: #9aa4b2; }
-.lewat .sel-jam        { color: #9aa4b2; }
+/* Palet per-status kini DIKIRIM JS (fungsi warnaStatus di index.js)
+   sebagai string hex ke atribut tag tunggal:
+     mendatang #152a45 | berikutnya #1d3a5f | berlangsung #103524
+     lewat #23282f (+ teks abu #9aa4b2 agar tetap terbaca). */

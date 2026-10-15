@@ -22,11 +22,23 @@
 
 var _modul = null;
 
+/** Nama fungsi alarm yang benar-benar tersedia pada modul (diagnostik). */
+function _namaFungsiAlarm(m) {
+  if (!m) return '';
+  var kandidat = ['setAlarm', 'addAlarm', 'createAlarm', 'startAlarm'];
+  for (var i = 0; i < kandidat.length; i++) {
+    try { if (typeof m[kandidat[i]] === 'function') return kandidat[i]; }
+    catch (e) { /* getter bermasalah — lewati */ }
+  }
+  return '';
+}
+
 /** Daftarkan objek modul @system.alarm hasil deteksi global/requireNapi. */
 export function daftarkanModulLegacy(m) {
-  if (m && (typeof m.setAlarm === 'function' || typeof m.addAlarm === 'function')) {
+  var fn = _namaFungsiAlarm(m);
+  if (fn) {
     _modul = m;
-    console.info('[alarm-legacy] modul @system.alarm terdaftar');
+    console.info('[alarm-legacy] modul alarm varian lama terdaftar (fungsi: ' + fn + ')');
     return true;
   }
   return false;
@@ -61,11 +73,18 @@ export function setAlarmLite(res) {
   if (!_modul || typeof _modul.setAlarm !== 'function') return false;
   var hariAktif = (res.days && res.days.length) ? res.days : [1, 2, 3, 4, 5, 6, 7];
   try {
+    // PERBAIKAN "tidak ada getar/notifikasi sama sekali": sebagian firmware
+    // hanya membunyikan alarm bila field `vibration` & `snooze` DIKIRIM
+    // secara eksplisit. Versi lama tidak mengirim keduanya → alarm terpasang
+    // (callback success) tapi berbunyi senyap tanpa getaran.
     _modul.setAlarm({
       hour: res.hour,
       minute: res.minute,
+      second: 0,
       days: hariAktif,
       label: res.label,
+      vibration: true,                // ← getar saat alarm bunyi
+      snooze: 0,                      // ← tanpa tunda (hindari diam-diam batal)
       success: function () {
         console.info('[alarm-legacy] SUKSES terpasang: ' + res.label +
                      ' @ ' + pad(res.hour) + ':' + pad(res.minute));
