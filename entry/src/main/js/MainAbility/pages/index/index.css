@@ -5,15 +5,19 @@
    DITOLAK LegacyCompileLiteJS ("The `padding` attribute does not support dp").
    Semua ukuran di bawah ditulis dalam PX AKTUAL panel 466x466 px.
 
-   Revisi UI "GRID 3 BARIS x 2 KOLOM" (permintaan pengguna):
+   Revisi UI "GRID 2x2 + ISYA PENUH-TENGAH" + FONT TEGAS (permintaan pengguna):
      Subuh | Zuhur
      Ashar | Maghrib
-     Isya  | (kosong)
+     [   Isya — satu baris penuh, tengah   ]
+   - Baris terakhir tak lagi punya sel kosong; Isya dibesarkan selebar box.
+   - FONT TEGAS: font-weight: bold pada SEMUA elemen teks + warna putih
+     murni (#ffffff) untuk angka/jam → kontras & ketegasan maksimal, tetap
+     terbaca jelas di AMOLED. Label sekunder memakai abu terang (#c7d3e0).
    - Penyebab bug lama "hanya Subuh & Zuhur": tiap kotak dibungkus div .sel
      (div.baris > div.sel > text = 3 tingkat) → firmware hanya me-render
-     baris pertama. Kini tiap baris berangsurkan DUA <text> LANGSUNG
+     baris pertama. Kini tiap baris berangsurkan <text> LANGSUNG
      (kedalaman sama dengan header yang selalu aman) → 5 waktu terjamin.
-   - Box "Menuju" tetap KECIL h80; font 18/24/14px tetap jelas terbaca.
+   - Box "Menuju" tetap KECIL h80; font 18/24/14px (bold) tetap jelas.
    - Penanda ✓/▶/➜ tetap DIHAPUS; tiap sel cukup "Subuh-04:16".
    - Margin aman lingkaran: padding 16px atas/bawah, 24px kiri/kanan.
    - Lebar konten = 466 - 2*24 = 418px dipakai SEMUA box dan grid.
@@ -22,9 +26,9 @@
        = 378px ≤ 466px → container justify-content:center, blok UI
        TERPUSAT vertikal; semua elemen terlihat utuh, TIDAK ADA yang
        terpotong di tepi layar watch.
-   - Setiap teks diberi lebar eksplisit proporsional font-size → tidak ada
-     tulisan terpotong dalam box (terpanjang "Maghrib-17:51" ≈ 143px <
-     lebar sel isi 190px).
+   - Setiap teks diberi lebar eksplisit proporsional font-size BOLD baru
+     → tidak ada tulisan terpotong dalam box (terpanjang "Maghrib-17:51"
+     bold ≈ 160px < lebar sel isi 190px; "Isya-19:00" ≈ 120px < 390px).
    Aturan build/runtime yang DIPATUHI KETAT (hasil iterasi DevEco pengguna):
      - TIDAK ada data binding pada atribut class (bentuk apa pun) -> ERROR.
      - TIDAK ada binding atribut kustom background-color/color pada div/text
@@ -67,12 +71,14 @@
 .t-glav {
   width: 390px;                     /* padding dalam → teks tak menempel tepi */
   font-size: 20px;
-  color: #9fb0c3;
+  font-weight: bold;                /* FONT TEGAS: tebal agar terbaca */
+  color: #c7d3e0;                   /* abu terang (naik kontras dari #9fb0c3) */
   text-align: center;
 }
 .t-jam {
   width: 390px;
   font-size: 32px;
+  font-weight: bold;                /* jam utama: tebal + putih murni */
   color: #ffffff;
   text-align: center;
   margin-top: 4px;                  /* jarak antar baris */
@@ -89,19 +95,22 @@
 .t-next-label {
   width: 390px;
   font-size: 18px;
-  color: #9ed4ff;
+  font-weight: bold;                /* tegas, tetap terbaca */
+  color: #bfe4ff;                   /* biru terang (kontras naik dari #9ed4ff) */
   text-align: center;
 }
 .t-next-waktu {
   width: 390px;
   font-size: 24px;                  /* jam masuk tetap paling menonjol */
+  font-weight: bold;
   color: #ffffff;
   text-align: center;
   margin-top: 2px;
 }
 .t-next-sisa {
   width: 390px;
-  font-size: 14px;                  /* "1 jam 15 menit lagi" ±175px < 390px */
+  font-size: 14px;                  /* "1 jam 15 menit lagi" bold ±195px < 390px */
+  font-weight: bold;
   color: #ffd166;
   text-align: center;
   margin-top: 2px;
@@ -115,18 +124,18 @@
 .t-kosong {
   width: 380px;
   font-size: 18px;
+  font-weight: bold;                /* tegas agar pesan penting terbaca */
   color: #ff8a80;
   text-align: center;
 }
 
-/* ============ GRID 5 WAKTU: 3 BARIS x 2 KOLOM ============
-   Layout: [Subuh|Zuhur] / [Ashar|Maghrib] / [Isya|kosong].
-   Tiap baris = div.baris (flex row) dengan DUA <text> langsung —
-   TANPA div pembungkus ".sel" (pembungkus bertingkat itulah yang bikin
-   firmware GT 7 Pro berhenti di baris pertama pada revisi sebelumnya).
-   <text> adalah leaf node sehingga kedalaman render identik dengan box
-   header yang tidak pernah bermasalah. Warna sel via kelas statis
-   (.sel-a / .sel-b) — checkerboard halus, mudah dibedakan, terbaca. */
+/* ============ GRID 5 WAKTU: 2 BARIS x 2 KOLOM + 1 BARIS ISYA PENUH ============
+   Layout: [Subuh|Zuhur] / [Ashar|Maghrib] / [Isya selebar box, tengah].
+   Tiap baris = div.baris (flex row) dengan <text> LANGSUNG — TANPA div
+   pembungkus ".sel" (pembungkus bertingkat itulah yang bikin firmware GT 7
+   Pro berhenti di baris pertama pada revisi sebelumnya). Baris Isya berisi
+   SATU <text> lebar penuh (418px) → justify-content:center menaruhnya
+   tepat di tengah. Warna sel via kelas statis (.sel-a / .sel-b / .sel-isya). */
 
 .grid {
   width: 418px;
@@ -144,8 +153,9 @@
   width: 204px;                     /* 2 x 204 + gap 10 = 418px */
   height: 52px;
   border-radius: 26px;              /* pill: radius = setengah tinggi */
-  font-size: 20px;                  /* "Maghrib-17:51" ≈ 143px < isi 190px */
-  color: #eaf1f8;
+  font-size: 20px;                  /* "Maghrib-17:51" BOLD ≈ 160px < isi 190px */
+  font-weight: bold;                /* FONT TEGAS: tebal + putih murni */
+  color: #ffffff;
   text-align: center;
   line-height: 52px;                /* teks vertikal-tengah dalam pill */
   padding-left: 7px;                /* sisa ruang: 204-14 = 190px */
@@ -153,7 +163,13 @@
 }
 .sel-a { background-color: #12233c; }
 .sel-b { background-color: #1a2f49; }
+/* Isya: baris terakhir digabung jadi satu pill selebar box, teks tengah. */
+.sel-isya {
+  width: 418px;                     /* selebar grid; teks tetap text-align:center */
+  background-color: #12233c;
+}
 
 /* CATATAN: div pembungkus ".sel" versi lama DIHAPUS dari HML — kini .sel
    adalah kelas pada elemen <text> itu sendiri. Penanda ✓/▶/➜ tetap
-   dihapus: tiap sel cukup "Subuh-04:16"; sel ke-6 tampil kosong. */
+   dihapus: tiap sel cukup "Subuh-04:16". Sel ke-6 (kosong) DIHAPUS —
+   baris terakhir kini hanya berisi Isya (lebar penuh, terpusat). */
