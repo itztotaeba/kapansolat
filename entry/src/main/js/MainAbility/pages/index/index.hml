@@ -2,40 +2,39 @@
   ============================================================================
   index.hml — LAYAR UTAMA "KAPAN SOLAT" (LAYAR BULAT GT 7 Pro, 466x466 px)
   ============================================================================
-  VERSI 100% STATIS (keputusan final setelah banyak iterasi build & render):
+  VERSI STATIS + GRID 3 BARIS x 2 KOLOM (permintaan pengguna):
+      Subuh  |  Zuhur
+      Ashar  |  Maghrib
+      Isya   |  (sel kosong)
 
   Fakta yang terbukti dari log DevEco + perilaku di jam Anda:
     1) Atribut `class` TIDAK BOLEH berisi {{ }} dalam bentuk apa pun
-       (satu token maupun dua token) → ERROR LegacyCompileLiteJS.
-    2) Binding pada atribut kustom `background-color` / `color` di <div>/<text>
-       lolos build tetapi runtime liteWearable GT 7 Pro MENGABAIKANNYA →
-       isi kotak jadi kosong/hilang sebagian (penyebab "hanya Subuh & Zuhur",
-       lalu "kosong semua").
-    3) For-loop dengan binding bersarang di dalamnya juga tidak stabil
-       per-render-nya di firmware ini (dihindari total).
+       → ERROR LegacyCompileLiteJS.
+    2) Binding pada atribut kustom `background-color` / `color` di <div>/
+       <text> lolos build tetapi runtime liteWearable MENGABAIKANNYA →
+       kotak tampil kosong/sebagian.
+    3) For-loop dengan binding bersarang tidak stabil per-render → hindari.
+    4) Penyebab bug lama "hanya Subuh & Zuhur": tiap KOTAK dibungkus SATU
+       DIV lagi (div.baris > div.sel > text = 3 tingkat). Firmware GT 7 Pro
+       hanya me-render baris pertama susunan sedalam itu.
+       Solusi baru: KEDALAMAN SERAGAM — setiap baris adalah div.baris yang
+       berangsurkan DUA <text> LANGSUNG (tidak ada div .sel sama sekali;
+       <text> bukan div sehingga tidak menambah kedalaman render).
+       Kedalaman maksimum identik dengan header (.box > text) yang tidak
+       pernah bermasalah → semua 5 waktu terjamin tampil.
 
-  Solusi definitive: SEMUA elemen ditulis STATIS — 5 nama sholat dan 5 jam
-  diikat sebagai string biasa ({{ subuhTeks }}, {{ zuhurTeks }}, dst.), pola
-  paling dasar yang selalu berhasil di seluruh versi liteWearable. Tiap
-  kotak grid kini berisi SATU teks gabungan "Nama-JJ:MM" (mis. Subuh-04:16)
-  — TANPA penanda ✓/▶/➜ lagi, sesuai permintaan pengguna. Warna tiap kotak
-  memakai kelas CSS statis; atribut id disediakan bila nanti perlu styling
-  per-status via JS (saat ini tidak dipakai — binding warna kustom memang
-  diabaikan runtime GT 7 Pro).
+  Tiap sel berisi SATU teks gabungan "Nama-JJ:MM" (mis. Subuh-04:16) —
+  TANPA penanda ✓/▶/➜, sesuai permintaan. Warna tiap sel memakai kelas
+  CSS statis. Sel ke-6 (kanan bawah) dibiarkan KOSONG seperti diminta.
 
-  PERBAIKAN "hanya Subuh & Zuhur yang muncul" (REVISI FINAL): pola grid
-  baris-2-kolom dengan div pembungkus ".sel" tetap membuat baris ke-2 &
-  ke-3 tidak ter-render di GT 7 Pro (gejala persis: hanya Subuh|Zuhur).
-  Kini grid = LIMA <text> langsung, satu per baris penuh, TANPA div
-  pembungkus — pola paling datar yang terbukti selalu ter-render.
-
-  Aturan lain yang dipatuhi: tanpa satuan dp, tanpa lines/text-overflow,
-  tanpa flex-grow; lebar/tinggi eksplisit px. Margin aman lingkaran 16px
-  vertikal / 24px horizontal; box tanggal h74; box "Menuju" DIKECILKAN
-  lagi h108 → h80 (tiga baris berpadat 2px, font 18/24/14px — masih jelas
-  dibaca); grid kini LIMA baris penuh 1-teks (5 x h46 = 230px). Rekap
-  tinggi: 16+74+10+80+10+230+16 = 436px ≤ 466px → blok UI terpusat
-  vertikal, muat penuh TANPA terpotong.
+  Ukuran: margin aman lingkaran 16px vertikal / 24px horizontal; box
+  tanggal h74; box "Menuju" DIKECILKAN h80 (font 18/24/14px, tetap jelas
+  dibaca); grid 3 baris x h52 + gap 8px = 172px. Rekap tinggi:
+  16+74+10+80+10+172+16 = 378px ≤ 466px → blok UI terpusat vertikal,
+  muat penuh TANPA terpotong. Setiap teks diberi lebar eksplisit
+  proporsional font-size → tidak ada tulisan terpotong dalam box.
+  Aturan lain dipatuhi: tanpa satuan dp, tanpa lines/text-overflow,
+  tanpa flex-grow; lebar/tinggi eksplisit px.
   ============================================================================
 -->
 <div class="container">
@@ -58,29 +57,27 @@
     <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ============ GRID 5 WAKTU SHOLAT — 5 BARIS PENUH, 1 TEKS/BARIS ======
-       PERBAIKAN FINAL bug "hanya Subuh & Zuhur yang tampil". Diagnosis dari
-       seluruh riwayat build pengguna:
-         a) Grid FOR-LOOP            → Ashar dst. tidak ter-render.
-         b) Grid baris 2 kolom + div pembungkus ".sel" per kotak
-                                     → HANYA baris PERTAMA (Subuh|Zuhur)
-                                       ter-render; baris ke-2 & ke-3 hilang.
-           Inilah pola yang masih dipakai PR#27 — karena itu bugnya menetap.
-         c) Satu <text> tunggal TANPA div pembungkus → SELALU ter-render
-           (dibuktikan header tanggal/jam yang tak pernah bermasalah).
-       Solusi definitive: struktur PALING DATAR yang didukung firmware —
-       LIMA baris penuh, masing-masing SATU <text> langsung di dalam .grid
-       (tanpa div ".sel" sama sekali), format "Nama-JJ:MM" (mis.
-       Subuh-04:16), tanpa penanda ✓/▶/➜. Tidak ada for-loop, tidak ada
-       binding class, tidak ada atribut kustom — semua aturan lama dipatuhi.
-       Warna latar tiap baris via kelas CSS statis (.baris-subuh ..
-       .baris-isya) agar tetap terbaca jelas dan mudah dibedakan. -->
+  <!-- ============ GRID 5 WAKTU — 3 BARIS x 2 KOLOM ============
+      Urutan: [Subuh|Zuhur], [Ashar|Maghrib], [Isya|kosong].
+      Struktur TERDATAR yang mungkin untuk layout 2 kolom: dua <text>
+      langsung sebagai anak div.baris — TANPA div pembungkus ".sel"
+      (pembungkus itulah yang membuat baris ke-2 & ke-3 hilang pada
+      revisi sebelumnya). Tidak ada for-loop, tidak ada binding class,
+      tidak ada atribut kustom. Teks sel ke-6 dikosongkan via JS
+      (sel6Teks = ''). -->
   <div class="grid" if="{{ tersedia }}">
-    <text id="tSubuh"   class="baris baris-subuh">{{ subuhTeks }}</text>
-    <text id="tZuhur"   class="baris baris-zuhur">{{ zuhurTeks }}</text>
-    <text id="tAshar"   class="baris baris-ashar">{{ asharTeks }}</text>
-    <text id="tMaghrib" class="baris baris-maghrib">{{ maghribTeks }}</text>
-    <text id="tIsya"    class="baris baris-isya">{{ isyaTeks }}</text>
+    <div class="baris">
+      <text id="tSel1" class="sel sel-a">{{ sel1Teks }}</text>
+      <text id="tSel2" class="sel sel-b">{{ sel2Teks }}</text>
+    </div>
+    <div class="baris">
+      <text id="tSel3" class="sel sel-b">{{ sel3Teks }}</text>
+      <text id="tSel4" class="sel sel-a">{{ sel4Teks }}</text>
+    </div>
+    <div class="baris">
+      <text id="tSel5" class="sel sel-a">{{ sel5Teks }}</text>
+      <text id="tSel6" class="sel sel-b">{{ sel6Teks }}</text>
+    </div>
   </div>
 
 </div>

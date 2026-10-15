@@ -4,25 +4,27 @@
    PENTING: LiteWearable HANYA mendukung satuan PX (default). Satuan 'dp'
    DITOLAK LegacyCompileLiteJS ("The `padding` attribute does not support dp").
    Semua ukuran di bawah ditulis dalam PX AKTUAL panel 466x466 px.
-   Revisi UI "BOX MENUJU DIKECILKAN + 5 BARIS JADWAL 1 TEKS" (feedback):
-     - Box "Menuju" dikecilkan lagi h108 → h80; font 18/24/14px dengan
-       jarak antar baris 2px — semua tulisan tetap jelas terbaca.
-     - Grid: LIMA baris penuh, tiap baris SATU <text> gabungan
-       "Nama-JJ:MM" (mis. Subuh-04:16) LANGSUNG di dalam .grid — tanpa div
-       pembungkus ".sel". Pembungkus bertingkat pada pola 2+2+1 (PR#27)
-       ternyata membuat baris ke-2 & ke-3 tidak ter-render di GT 7 Pro
-       (gejala menetap: hanya Subuh & Zuhur). Penanda ✓/▶/➜ DIHAPUS.
-     - Margin aman lingkaran: padding 16px atas/bawah, 24px kiri/kanan.
-     - Lebar konten = 466 - 2*24 = 418px dipakai SEMUA box dan grid.
-     - BOX tanggal+jam (h74) → BOX "Menuju" (h80)
-       → GRID waktu sholat 5 baris x h46 (= 230px).
-     - Rekap tinggi vertikal:
-         16(pad) + 74(box1) + 10 + 80(box2) + 10 + 230(grid) + 16(pad)
-         = 436px ≤ 466px → container justify-content:center sehingga blok
-         vertikal TERPUSAT rapi; semua elemen terlihat utuh, TIDAK ADA
-         yang terpotong di tepi layar watch.
-     - Setiap teks diberi lebar eksplisit lebih kecil dari box-nya dengan
-       font-size proporsional → tidak ada tulisan terpotong dalam box.
+
+   Revisi UI "GRID 3 BARIS x 2 KOLOM" (permintaan pengguna):
+     Subuh | Zuhur
+     Ashar | Maghrib
+     Isya  | (kosong)
+   - Penyebab bug lama "hanya Subuh & Zuhur": tiap kotak dibungkus div .sel
+     (div.baris > div.sel > text = 3 tingkat) → firmware hanya me-render
+     baris pertama. Kini tiap baris berangsurkan DUA <text> LANGSUNG
+     (kedalaman sama dengan header yang selalu aman) → 5 waktu terjamin.
+   - Box "Menuju" tetap KECIL h80; font 18/24/14px tetap jelas terbaca.
+   - Penanda ✓/▶/➜ tetap DIHAPUS; tiap sel cukup "Subuh-04:16".
+   - Margin aman lingkaran: padding 16px atas/bawah, 24px kiri/kanan.
+   - Lebar konten = 466 - 2*24 = 418px dipakai SEMUA box dan grid.
+   - Rekap tinggi vertikal:
+       16(pad) + 74(box1) + 10 + 80(box2) + 10 + 172(grid) + 16(pad)
+       = 378px ≤ 466px → container justify-content:center, blok UI
+       TERPUSAT vertikal; semua elemen terlihat utuh, TIDAK ADA yang
+       terpotong di tepi layar watch.
+   - Setiap teks diberi lebar eksplisit proporsional font-size → tidak ada
+     tulisan terpotong dalam box (terpanjang "Maghrib-17:51" ≈ 143px <
+     lebar sel isi 190px).
    Aturan build/runtime yang DIPATUHI KETAT (hasil iterasi DevEco pengguna):
      - TIDAK ada data binding pada atribut class (bentuk apa pun) -> ERROR.
      - TIDAK ada binding atribut kustom background-color/color pada div/text
@@ -77,11 +79,11 @@
 }
 
 /* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (DIKECILKAN) ============
-   Permintaan pengguna: box ini dikecilkan lagi asal semua tulisan tetap
-   terbaca. h108 → h80; tiga baris berpadat 2px dengan font 18/24/14px —
-   masih nyaman dibaca di PPI 317, tapi tidak lagi mendominasi layar. */
+   Permintaan pengguna: box ini dikecilkan asal semua tulisan tetap
+   terbaca. h80; tiga baris berpadat 2px dengan font 18/24/14px —
+   masih nyaman dibaca di PPI 317, tapi tidak mendominasi layar. */
 .box-next {
-  height: 80px;                     /* rekap vertikal: 16+74+10+80+10+144+16 = 350 ≤ 466 */
+  height: 80px;
   background-color: #16283f;
 }
 .t-next-label {
@@ -117,38 +119,41 @@
   text-align: center;
 }
 
-/* ============ GRID 5 WAKTU: LIMA BARIS PENUH, SATU <text> PER BARIS ======
-   PERBAIKAN FINAL bug "hanya Subuh & Zuhur yang tampil" di GT 7 Pro.
-   Riwayat diagnosis:
-     - for-loop        → tidak stabil;   - baris-2-kolom + div ".sel"
-       (pola PR#26/#27) → HANYA baris pertama ter-render (Subuh|Zuhur),
-       baris ke-2/ke-3 hilang oleh firmware.
-   Struktur paling datar yang SELALU berhasil di liteWearable: satu <text>
-   langsung sebagai anak .grid — tanpa div pembungkus apa pun. Maka jadwal
-   kini disajikan sebagai 5 baris penuh berurutan Subuh→Isya, masing-masing
-   SATU teks gabungan "Nama-JJ:MM" (mis. Subuh-04:16), tanpa penanda ✓/▶/➜.
-   Kelas warna latar statis membedakan tiap baris; tidak ada binding class,
-   tidak ada atribut kustom, lebar/tinggi eksplisit px. */
+/* ============ GRID 5 WAKTU: 3 BARIS x 2 KOLOM ============
+   Layout: [Subuh|Zuhur] / [Ashar|Maghrib] / [Isya|kosong].
+   Tiap baris = div.baris (flex row) dengan DUA <text> langsung —
+   TANPA div pembungkus ".sel" (pembungkus bertingkat itulah yang bikin
+   firmware GT 7 Pro berhenti di baris pertama pada revisi sebelumnya).
+   <text> adalah leaf node sehingga kedalaman render identik dengan box
+   header yang tidak pernah bermasalah. Warna sel via kelas statis
+   (.sel-a / .sel-b) — checkerboard halus, mudah dibedakan, terbaca. */
 
 .grid {
   width: 418px;
-  height: 230px;                    /* 5 baris x 46px */
+  height: 172px;                    /* 3 baris x 52px + 2 gap x 8px */
   flex-direction: column;
+  justify-content: space-between;
 }
 .baris {
   width: 418px;
-  height: 46px;                     /* h46 = ruang baca nyaman font 22px */
-  border-radius: 23px;              /* pill: radius = setengah tinggi */
-  font-size: 22px;                  /* "Maghrib-17:51" ≈ 170px << 418px → MUAT */
+  height: 52px;                     /* ruang baca nyaman untuk font 20px */
+  flex-direction: row;
+  justify-content: space-between;   /* gap alami 10px antar dua sel */
+}
+.sel {
+  width: 204px;                     /* 2 x 204 + gap 10 = 418px */
+  height: 52px;
+  border-radius: 26px;              /* pill: radius = setengah tinggi */
+  font-size: 20px;                  /* "Maghrib-17:51" ≈ 143px < isi 190px */
   color: #eaf1f8;
   text-align: center;
+  line-height: 52px;                /* teks vertikal-tengah dalam pill */
+  padding-left: 7px;                /* sisa ruang: 204-14 = 190px */
+  padding-right: 7px;
 }
-.baris-subuh   { background-color: #12233c; }
-.baris-zuhur   { background-color: #16283f; }
-.baris-ashar   { background-color: #1a2f49; }
-.baris-maghrib { background-color: #16283f; }
-.baris-isya    { background-color: #12233c; }
+.sel-a { background-color: #12233c; }
+.sel-b { background-color: #1a2f49; }
 
-/* CATATAN FINAL: div ".sel" dan kelas ".sel-gabungan" DIHAPUS — pembungkus
-   bertingkat itulah yang membuat baris 2 & 3 tidak ter-render. Penanda
-   ✓/▶/➜ juga tetap dihapus: tiap baris cukup "Subuh-04:16". */
+/* CATATAN: div pembungkus ".sel" versi lama DIHAPUS dari HML — kini .sel
+   adalah kelas pada elemen <text> itu sendiri. Penanda ✓/▶/➜ tetap
+   dihapus: tiap sel cukup "Subuh-04:16"; sel ke-6 tampil kosong. */
