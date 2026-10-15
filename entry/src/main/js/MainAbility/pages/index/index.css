@@ -3,13 +3,18 @@
    ==========================================================================
    PENTING: LiteWearable HANYA mendukung satuan PX (default). Satuan 'dp'
    DITOLAK LegacyCompileLiteJS ("The `padding` attribute does not support dp").
-   Semua ukuran di bawah ditulis dalam PX AKTUAL panel 466x466 px. Ringkasan layout (semua ter-center):
-     MARGIN AMAN LINGKARAN: padding 20px keliling (~4% panel; padanan
-       visual ~8% pada area baca melingkar) → TIDAK ADA kotak menempel tepi.
-     - Lebar konten = 466 - 2*20 = 426px.
-     - BOX tanggal+jam (h90) → BOX "Menuju" info utama paling besar (h120)
-       → GRID waktu sholat 2+2+1 (3 baris x h34, Isya rata tengah).
-     - Total tinggi ±372px < 466px → muat TANPA scroll & ter-center.
+   Semua ukuran di bawah ditulis dalam PX AKTUAL panel 466x466 px.
+   Revisi UI "BOX BESAR, MINIMAL BLANK SPACE":
+     - Margin aman lingkaran diperkecil: padding 10px atas/bawah, 14px
+       kiri/kanan (tetap aman dari bezel bulat, blank space tepi hilang).
+     - Lebar konten = 466 - 2*14 = 438px dipakai SEMUA box dan grid.
+     - BOX tanggal+jam (h100) → BOX "Menuju" info utama (h144)
+       → GRID waktu sholat 2+2+1 (3 baris x h62, kotak sel h56).
+     - Rekap tinggi vertikal:
+         10(pad) + 100(box1) + 8 + 144(box2 tanpa margin) + 186(grid)
+         = 448px ≤ 466px → muat TANPA scroll, tidak terpotong di watch.
+     - Setiap teks diberi lebar eksplisit lebih kecil dari box-nya dengan
+       font-size proporsional → tidak ada tulisan terpotong dalam box.
    Aturan build/runtime yang DIPATUHI KETAT (hasil iterasi DevEco pengguna):
      - TIDAK ada data binding pada atribut class (bentuk apa pun) -> ERROR.
      - TIDAK ada binding atribut kustom background-color/color pada div/text
@@ -26,38 +31,41 @@
   align-items: center;
   justify-content: center;          /* konten di-tengah vertikal */
   background-color: #000000;        /* AMOLED: tepi gelap menyatu bezel bulat */
-  padding: 20px;                    /* MARGIN AMAN LINGKARAN ~4% panel */
+  padding-top: 10px;                /* margin aman lingkaran (vertikal) */
+  padding-bottom: 10px;
+  padding-left: 14px;               /* margin aman lingkaran (horizontal) */
+  padding-right: 14px;
 }
 
 /* ---------- gaya KOTAK umum (lebar penuh area aman) ---------- */
 .box {
-  width: 426px;                     /* 466 - 2*20 margin aman keliling */
-  border-radius: 22px;
+  width: 438px;                     /* 466 - 2*14 margin aman horizontal */
+  border-radius: 26px;
   border-width: 0px;
   background-color: #101a2b;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-bottom: 10px;              /* jarak nyaman antar elemen */
+  margin-bottom: 8px;               /* jarak antar box (blank space minimal) */
 }
 
 /* ==================== BOX 1: TANGGAL & JAM ==================== */
 .box-tanggal {
-  height: 84px;
+  height: 100px;
   background-color: #0b1220;
 }
 .t-glav {
-  width: 394px;                     /* padding dalam → teks tak menempel tepi */
-  font-size: 22px;
+  width: 410px;                     /* padding dalam → teks tak menempel tepi */
+  font-size: 26px;
   color: #9fb0c3;
   text-align: center;
 }
 .t-jam {
-  width: 394px;
-  font-size: 36px;
+  width: 410px;
+  font-size: 44px;
   color: #ffffff;
   text-align: center;
-  margin-top: 4px;                  /* jarak antar baris */
+  margin-top: 6px;                  /* jarak antar baris */
 }
 
 /* ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (info utama) ============
@@ -65,38 +73,39 @@
    bertumpuk berjarak: label → jam masuk → hitung mundur, sehingga tidak
    ada baris yang menutupi baris lain. */
 .box-next {
-  height: 118px;
+  height: 144px;                    /* rekap vertikal: 10+100+8+144+186 = 448 ≤ 466 */
+  margin-bottom: 0;                 /* grid menempel → blank space hilang */
   background-color: #16283f;
 }
 .t-next-label {
-  width: 394px;
-  font-size: 24px;
+  width: 410px;
+  font-size: 28px;
   color: #9ed4ff;
   text-align: center;
 }
 .t-next-waktu {
-  width: 394px;
-  font-size: 28px;                  /* proporsional: tak menutupi countdown */
+  width: 410px;
+  font-size: 40px;                  /* jam masuk = angka terpenting */
   color: #ffffff;
   text-align: center;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 .t-next-sisa {
-  width: 394px;
-  font-size: 22px;
+  width: 410px;
+  font-size: 26px;
   color: #ffd166;
   text-align: center;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* ==================== BOX: jadwal belum diisi ==================== */
 .box-kosong {
-  height: 82px;
+  height: 110px;
   background-color: #1d1015;
 }
 .t-kosong {
-  width: 386px;
-  font-size: 21px;
+  width: 402px;
+  font-size: 24px;
   color: #ff8a80;
   text-align: center;
 }
@@ -106,12 +115,12 @@
    PASTI: baris 1-2 dua kolom seimbang, baris 3 satu kotak RATA TENGAH. */
 
 .grid {
-  width: 426px;
-  height: 150px;                    /* 3 baris x 50px */
+  width: 438px;
+  height: 186px;                    /* 3 baris x 62px */
 }
 .baris {
-  width: 426px;
-  height: 50px;                     /* kotak 42px + jarak 8px */
+  width: 438px;
+  height: 62px;                     /* kotak 56px + jarak 6px */
   flex-direction: row;
   justify-content: space-between;
 }
@@ -122,25 +131,25 @@
    TIDAK ada atribut kustom background-color/color — keduanya bermasalah
    di toolchain/runtime GT 7 Pro. Status ditandai lewat TEKS penanda.) ---- */
 .sel {
-  width: 207px;
-  height: 42px;
-  border-radius: 21px;
+  width: 214px;
+  height: 56px;
+  border-radius: 28px;
   border-width: 0px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-left: 14px;               /* padding dalam → teks tak menempel */
-  padding-right: 14px;
+  padding-left: 16px;               /* padding dalam → teks tak menempel */
+  padding-right: 16px;
   background-color: #152a45;        /* default (bila binding belum jalan) */
 }
 .sel-nama {
-  width: 100px;                      /* "Maghrib" muat utuh, tak terpotong */
-  font-size: 20px;
+  width: 112px;                     /* "Maghrib" font 26px muat utuh */
+  font-size: 26px;
   color: #eaf1f8;
 }
 .sel-jam {
-  width: 64px;                      /* "04:21" muat utuh */
-  font-size: 21px;
+  width: 78px;                      /* "04:21" font 26px muat utuh */
+  font-size: 26px;
   text-align: right;
   color: #ffffff;
 }
@@ -148,8 +157,8 @@
    Bukan warna/class — dua jalur itu bermasalah di toolchain & runtime
    GT 7 Pro (lihat komentar index.hml). */
 .sel-penanda {
-  width: 24px;
-  font-size: 18px;
+  width: 28px;
+  font-size: 22px;
   color: #9ed4ff;
   text-align: center;
 }

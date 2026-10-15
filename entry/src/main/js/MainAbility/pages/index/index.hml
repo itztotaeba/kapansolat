@@ -22,7 +22,10 @@
   di-binding — tetap informatif tanpa atribut kustom sama sekali.
 
   Aturan lain yang dipatuhi: tanpa satuan dp, tanpa lines/text-overflow,
-  tanpa flex-grow; lebar/tinggi eksplisit px; margin aman lingkaran 20px.
+  tanpa flex-grow; lebar/tinggi eksplisit px. Margin aman lingkaran kini
+  10px vertikal / 14px horizontal + semua box diperbesar (box tanggal
+  h100, box "Menuju" h144, grid sel h56) sehingga UI mengisi layar watch
+  tanpa blank space berlebih dan tetap muat penuh 466x466 TANPA terpotong.
   ============================================================================
 -->
 <div class="container">
