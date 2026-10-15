@@ -1,20 +1,28 @@
 <!--
   ============================================================================
-  index.hml — LAYAR UTAMA "KAPAN SOLAT" (LAYAR BULAT GT 7 Pro)
+  index.hml — LAYAR UTAMA "KAPAN SOLAT" (LAYAR BULAT GT 7 Pro, 466x466 px)
   ============================================================================
-  Panel fisik 466x466 PX (LiteWearable hanya mendukung satuan px pada CSS;
-  'dp' DITOLAK compiler). Aturan LiteWearable yang DIPATUHI KETAT:
-    - TIDAK ada data binding pada atribut `class` (LegacyCompileLiteJS
-      menolak mutlak) → kelas HANYA string statis; warna per-status dibawa
-      lewat ATRIBUT tag tunggal (background-color, color) dengan binding —
-      pola resmi yang terbukti lolos build + render di jam pengguna.
-    - TIDAK memakai atribut kustom `lines` / `text-overflow`.
-    - Setiap elemen punya lebar/tinggi eksplisit (px) + margin aman 20px
-      keliling → tidak ada yang menempel/menutup ke lengkungan bulat.
+  VERSI 100% STATIS (keputusan final setelah banyak iterasi build & render):
 
-  Struktur (semua dalam box, rata tengah, seimbang atas-bawah):
-    BOX tanggal+jam → BOX besar "Menuju ..." (info utama paling jelas)
-    → GRID 2+2+1: Subuh|Zuhur / Ashar|Maghrib / Isya (rata tengah).
+  Fakta yang terbukti dari log DevEco + perilaku di jam Anda:
+    1) Atribut `class` TIDAK BOLEH berisi {{ }} dalam bentuk apa pun
+       (satu token maupun dua token) → ERROR LegacyCompileLiteJS.
+    2) Binding pada atribut kustom `background-color` / `color` di <div>/<text>
+       lolos build tetapi runtime liteWearable GT 7 Pro MENGABAIKANNYA →
+       isi kotak jadi kosong/hilang sebagian (penyebab "hanya Subuh & Zuhur",
+       lalu "kosong semua").
+    3) For-loop `for="{{ jadwal }}"` dengan binding bersarang di dalamnya
+       juga tidak stabil per-render-nya di firmware ini.
+
+  Solusi definitive: SEMUA elemen ditulis STATIS — 5 nama sholat dan 5 jam
+  diikat sebagai string biasa ({{ namaSubuh }}, {{ jamSubuh }}, dst.), pola
+  paling dasar yang selalu berhasil di seluruh versi liteWearable. Warna
+  tiap kotak memakai kelas CSS statis (tidak berubah per-status), sedangkan
+  STATUS ditandai lewat TEKS penanda (✓ lewat / ▶ kini / ➜ nanti) yang ikut
+  di-binding — tetap informatif tanpa atribut kustom sama sekali.
+
+  Aturan lain yang dipatuhi: tanpa satuan dp, tanpa lines/text-overflow,
+  tanpa flex-grow; lebar/tinggi eksplisit px; margin aman lingkaran 20px.
   ============================================================================
 -->
 <div class="container">
@@ -25,9 +33,7 @@
     <text class="t-jam">{{ jamSekarang }}</text>
   </div>
 
-  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (info utama) ======
-       Tiga baris bertumpuk berjarak — label, jam masuk, dan hitung
-       mundur tidak mungkin saling menutupi. -->
+  <!-- ============ BOX 2: MENUJU SHOLAT BERIKUTNYA (info utama) ====== -->
   <div class="box box-next" if="{{ tersedia }}">
     <text class="t-next-label">{{ pesanNext }}</text>
     <text class="t-next-waktu">{{ waktuBerikutnya }}</text>
@@ -39,45 +45,50 @@
     <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ============ GRID WAKTU SHOLAT: BARIS EKSPLISIT 2 + 2 + 1 ============
+  <!-- ============ GRID 5 WAKTU SHOLAT — BARIS EKSPLISIT 2+2+1 ============
        Baris 1: Subuh | Zuhur   Baris 2: Ashar | Maghrib   Baris 3: Isya
-       (kotak ke-5 dalam pembungkus .baris-tengah agar RATA TENGAH layar).
-       Tiap kotak = NAMA + JAM masuk, kontras penuh, tanpa penanda lain.
-
-       ATURAN COMPILER YANG DIPATUHI MUTLAK (riwayat error pengguna):
-       a) Atribut `class` HARUS string statis murni — LegacyCompileLiteJS
-          MENOLAK SEMUA bentuk data binding pada class, termasuk satu-token
-          class="{{ x }}" (error: "in tag `div` class selector does not
-          support data binding"). Karena itu pembeda status TIDAK boleh lagi
-          lewat kelas dinamis.
-       b) Ganti perannya dengan ATRIBUT TAG TUNGGAL bawaan yang MENDUKUNG
-          binding: `background-color` pada <div> dan `color` pada <text>.
-          Ini persis pola yang sudah TERBUKTI ter-render normal di jam
-          pengguna (kotak "Menuju"/hari ini memakai warna statis; warna
-          per-item grid via binding atribut). Validator mungkin mencetak
-          WARNING kosmetik "use customize attr ..." — BUKAN error, build
-          LOLOS, dan runtime liteWearable justru menjalankan binding ini.
-       c) Tidak ada `lines` / `text-overflow`, tidak ada `flex-grow`,
-          tidak ada satuan dp — semuanya px eksplisit panel 466x466.
-       For-loop dinamis dihindari: baris ditulis eksplisit agar posisi 5
-       kotak PASTI (2+2+1) — tidak ada item hilang akibat wrap. -->
-  <!-- ============ JADWAL 5 WAKTU — SATU-SATUNYA BLOK YANG DIPAKAI ============
-       <div for="{{ jadwal }}"> dijamin SELALU merender SEMUA item array (5
-       kotak: Subuh/Zuhur/Ashar/Maghrib/Isya) TANPA indeks manual — pola ini
-       yang sudah terbukti di jam Anda menampilkan Subuh & Zuhur dengan benar;
-       kini kelanjutannya (Ashar s.d. Isya) ikut karena sumbernya sama-sama
-       array `jadwal` yang selalu diisi penuh 5 elemen oleh JS (lengkapi5).
-       Warna per-status lewat atribut tag tunggal (binding didukung runtime);
-       atribut class statis murni (aturan compiler). -->
+       Tiap kotak: penanda status (teks) + NAMA + JAM masuk.
+       Semua binding berupa string skalar sederhana — TIDAK ada for-loop,
+       TIDAK ada binding class, TIDAK ada atribut kustom. -->
   <div class="grid" if="{{ tersedia }}">
-    <div class="grid-item" for="{{ jadwal }}" tid="key">
-      <div class="baris">
-        <div class="sel" background-color="{{ $item.bg }}">
-          <text class="sel-nama" color="{{ $item.warnaNama }}">{{ $item.nama }}</text>
-          <text class="sel-jam" color="{{ $item.warna }}">{{ $item.waktu }}</text>
-        </div>
+
+    <!-- Baris 1: Subuh | Zuhur -->
+    <div class="baris">
+      <div class="sel">
+        <text class="sel-penanda">{{ penandaSubuh }}</text>
+        <text class="sel-nama">{{ namaSubuh }}</text>
+        <text class="sel-jam">{{ jamSubuh }}</text>
+      </div>
+      <div class="sel">
+        <text class="sel-penanda">{{ penandaZuhur }}</text>
+        <text class="sel-nama">{{ namaZuhur }}</text>
+        <text class="sel-jam">{{ jamZuhur }}</text>
       </div>
     </div>
+
+    <!-- Baris 2: Ashar | Maghrib -->
+    <div class="baris">
+      <div class="sel">
+        <text class="sel-penanda">{{ penandaAshar }}</text>
+        <text class="sel-nama">{{ namaAshar }}</text>
+        <text class="sel-jam">{{ jamAshar }}</text>
+      </div>
+      <div class="sel">
+        <text class="sel-penanda">{{ penandaMaghrib }}</text>
+        <text class="sel-nama">{{ namaMaghrib }}</text>
+        <text class="sel-jam">{{ jamMaghrib }}</text>
+      </div>
+    </div>
+
+    <!-- Baris 3: Isya (rata tengah layar bulat) -->
+    <div class="baris baris-tengah">
+      <div class="sel">
+        <text class="sel-penanda">{{ penandaIsya }}</text>
+        <text class="sel-nama">{{ namaIsya }}</text>
+        <text class="sel-jam">{{ jamIsya }}</text>
+      </div>
+    </div>
+
   </div>
 
 </div>
