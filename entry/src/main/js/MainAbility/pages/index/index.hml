@@ -23,9 +23,11 @@
 
   Aturan lain yang dipatuhi: tanpa satuan dp, tanpa lines/text-overflow,
   tanpa flex-grow; lebar/tinggi eksplisit px. Margin aman lingkaran kini
-  10px vertikal / 14px horizontal + semua box diperbesar (box tanggal
-  h100, box "Menuju" h144, grid sel h56) sehingga UI mengisi layar watch
-  tanpa blank space berlebih dan tetap muat penuh 466x466 TANPA terpotong.
+  16px vertikal / 24px horizontal; semua box diperkecil ±30% dari revisi
+  "box besar" sebelumnya (box tanggal h74, box "Menuju" h108, grid sel
+  h44) — kompromi: tetap lebih besar dari versi asli yang terlalu kecil,
+  tapi tidak lagi tampak kacau; blok UI terpusat dan muat penuh
+  466x466 TANPA terpotong.
   ============================================================================
 -->
 <div class="container">
