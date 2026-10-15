@@ -1,16 +1,15 @@
 /* ==========================================================================
-   index.css — LAYAR BULAT GT 7 Pro (panel fisik 454x454 PX)
+   index.css — LAYAR BULAT GT 7 Pro (panel fisik 466x466 PX, PPI 317)
    ==========================================================================
    PENTING: LiteWearable HANYA mendukung satuan PX (default). Satuan 'dp'
    DITOLAK LegacyCompileLiteJS ("The `padding` attribute does not support dp").
-   Semua ukuran di bawah ditulis dalam PX hasil konversi desain dp x 1.875
-   (GT 7 Pro). Ringkasan layout (semua ter-center):
-     - MARGIN AMAN LINGKARAN: padding 16px keliling (~3.5% panel; padanan
-       visual ~8% pada tampilan melingkar) → TIDAK ADA kotak menempel tepi.
-     - Lebar konten = 454 - 2*16 = 422px.
+   Semua ukuran di bawah ditulis dalam PX AKTUAL panel 466x466 px. Ringkasan layout (semua ter-center):
+     MARGIN AMAN LINGKARAN: padding 20px keliling (~4% panel; padanan
+       visual ~8% pada area baca melingkar) → TIDAK ADA kotak menempel tepi.
+     - Lebar konten = 466 - 2*20 = 426px.
      - BOX tanggal+jam (h90) → BOX "Menuju" info utama paling besar (h120)
        → GRID waktu sholat 2+2+1 (3 baris x h34, Isya rata tengah).
-     - Total tinggi ±386px < 454px → muat TANPA scroll & seimbang segala sisi.
+     - Total tinggi ±372px < 466px → muat TANPA scroll & ter-center.
    Aturan build yang DIPATUHI KETAT (hasil iterasi DevEco pengguna):
      - TIDAK ada data binding pada atribut `class` (ditolak mutlak) → kelas
        statis; warna per-status via ATRIBUT tag tunggal (background-color/
@@ -29,12 +28,12 @@
   align-items: center;
   justify-content: center;          /* konten di-tengah vertikal */
   background-color: #000000;        /* AMOLED: tepi gelap menyatu bezel bulat */
-  padding: 16px;                    /* MARGIN AMAN LINGKARAN (keliling) */
+  padding: 20px;                    /* MARGIN AMAN LINGKARAN ~4% panel */
 }
 
 /* ---------- gaya KOTAK umum (lebar penuh area aman) ---------- */
 .box {
-  width: 422px;                     /* isi ruang, tetap dlm radius aman */
+  width: 426px;                     /* 466 - 2*20 margin aman keliling */
   border-radius: 22px;
   border-width: 0px;
   background-color: #101a2b;
@@ -46,18 +45,18 @@
 
 /* ==================== BOX 1: TANGGAL & JAM ==================== */
 .box-tanggal {
-  height: 90px;
+  height: 84px;
   background-color: #0b1220;
 }
 .t-glav {
-  width: 390px;                     /* padding dalam → teks tak menempel tepi */
-  font-size: 20px;
+  width: 394px;                     /* padding dalam → teks tak menempel tepi */
+  font-size: 22px;
   color: #9fb0c3;
   text-align: center;
 }
 .t-jam {
-  width: 390px;
-  font-size: 34px;
+  width: 394px;
+  font-size: 36px;
   color: #ffffff;
   text-align: center;
   margin-top: 4px;                  /* jarak antar baris */
@@ -68,25 +67,25 @@
    bertumpuk berjarak: label → jam masuk → hitung mundur, sehingga tidak
    ada baris yang menutupi baris lain. */
 .box-next {
-  height: 120px;
+  height: 118px;
   background-color: #16283f;
 }
 .t-next-label {
-  width: 390px;
-  font-size: 22px;
+  width: 394px;
+  font-size: 24px;
   color: #9ed4ff;
   text-align: center;
 }
 .t-next-waktu {
-  width: 390px;
-  font-size: 26px;                  /* proporsional: tak menutupi countdown */
+  width: 394px;
+  font-size: 28px;                  /* proporsional: tak menutupi countdown */
   color: #ffffff;
   text-align: center;
   margin-top: 4px;
 }
 .t-next-sisa {
-  width: 390px;
-  font-size: 20px;
+  width: 394px;
+  font-size: 22px;
   color: #ffd166;
   text-align: center;
   margin-top: 4px;
@@ -94,12 +93,12 @@
 
 /* ==================== BOX: jadwal belum diisi ==================== */
 .box-kosong {
-  height: 80px;
+  height: 82px;
   background-color: #1d1015;
 }
 .t-kosong {
-  width: 380px;
-  font-size: 20px;
+  width: 386px;
+  font-size: 21px;
   color: #ff8a80;
   text-align: center;
 }
@@ -108,12 +107,12 @@
    Baris disusun manual di HML (bukan for-loop wrap) agar posisi tiap kotak
    PASTI: baris 1-2 dua kolom seimbang, baris 3 satu kotak RATA TENGAH. */
 .grid {
-  width: 422px;
-  height: 162px;                    /* 3 baris x 54px */
+  width: 426px;
+  height: 150px;                    /* 3 baris x 50px */
 }
 .baris {
-  width: 422px;
-  height: 54px;                     /* kotak 38px + jarak bawah 16px */
+  width: 426px;
+  height: 50px;                     /* kotak 42px + jarak 8px */
   flex-direction: row;
   justify-content: space-between;
 }
@@ -122,9 +121,9 @@
 }
 .sel {
   /* Kotak bersih: TANPA border/dome/penanda — fokus keterbacaan jadwal */
-  width: 204px;
-  height: 38px;
-  border-radius: 19px;
+  width: 207px;
+  height: 42px;
+  border-radius: 21px;
   border-width: 0px;
   flex-direction: row;
   align-items: center;
@@ -134,13 +133,13 @@
   background-color: #152a45;        /* default mendatang (binding menimpa) */
 }
 .sel-nama {
-  width: 92px;                      /* "Maghrib" muat utuh, tak terpotong */
-  font-size: 18px;
+  width: 100px;                      /* "Maghrib" muat utuh, tak terpotong */
+  font-size: 20px;
   color: #eaf1f8;
 }
 .sel-jam {
-  width: 60px;                      /* "04:21" muat utuh */
-  font-size: 20px;
+  width: 64px;                      /* "04:21" muat utuh */
+  font-size: 21px;
   text-align: right;
   color: #ffffff;
 }
