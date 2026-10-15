@@ -14,11 +14,12 @@
  *     sesuai permintaan pengguna.
  *   BUG "hanya Subuh & Zuhur yang tampil": dipicu pembungkus div bersarang
  *   di dalam tiap baris grid — firmware GT 7 Pro berhenti me-render setelah
- *   kedalaman tertentu. Kini layout 3 baris x 2 kolom dengan DUA <text>
- *   LANGSUNG sebagai anak div.baris (tanpa div .sel), kedalaman identik
- *   dengan header yang selalu aman. Sisi JS: enam field sel1Teks..sel6Teks
- *   SELALU di-assign tiap refresh; sel6Teks = '' (kolom kanan bawah kosong
- *   sesuai permintaan). Format tetap "Nama-JJ:MM", tanpa penanda ✓/▶/➜.
+ *   kedalaman tertentu. Kini layout 2 baris x 2 kolom + 1 baris Isya penuh
+ *   (tengah) dengan <text> LANGSUNG sebagai anak div.baris (tanpa div .sel),
+ *   kedalaman identik dengan header yang selalu aman. Sisi JS: lima field
+ *   sel1Teks..sel5Teks SELALU di-assign tiap refresh; sel ke-6 DIHAPUS
+ *   (permintaan terbaru: baris terakhir hanya Isya, digabung & center).
+ *   Format tetap "Nama-JJ:MM", tanpa penanda ✓/▶/➜.
  *   Pola binding string skalar adalah yang paling dasar & selalu berhasil
  *   di semua versi liteWearable.
  *
@@ -50,13 +51,13 @@ export default {
     waktuBerikutnya: '',            // '15:09'
     sisaWaktu: '',                  // '1 jam 15 menit lagi'
 
-    // ---- Grid 3 baris x 2 kolom: SATU string gabungan "Nama-JJ:MM" ----
-    // Urutan sel: 1=Subuh 2=Zuhur 3=Ashar 4=Maghrib 5=Isya 6=KOSONG('').
-    // Penanda ✓/▶/➜ dihapus sesuai permintaan; dua <text> langsung per
-    // baris menjamin KELIMA waktu ter-render di GT 7 Pro.
+    // ---- Grid 2x2 + baris Isya penuh: SATU string gabungan "Nama-JJ:MM" ----
+    // Urutan sel: 1=Subuh 2=Zuhur 3=Ashar 4=Maghrib 5=Isya (baris penuh,
+    // tengah). Sel ke-6 DIHAPUS sesuai permintaan; penanda ✓/▶/➜ dihapus;
+    // <text> langsung per baris menjamin KELIMA waktu ter-render.
     sel1Teks: 'Subuh--:--',  sel2Teks: 'Zuhur--:--',
     sel3Teks: 'Ashar--:--',  sel4Teks: 'Maghrib--:--',
-    sel5Teks: 'Isya--:--',   sel6Teks: ''
+    sel5Teks: 'Isya--:--'
   },
 
   onInit() {
@@ -111,7 +112,6 @@ export default {
       for (var i = 0; i < KEYS.length; i++) {
         this['sel' + (i + 1) + 'Teks'] = Capital(KEYS[i]) + '--:--';
       }
-      this.sel6Teks = '';            // kolom kanan bawah memang kosong
       return;
     }
 
@@ -126,16 +126,15 @@ export default {
       this.sisaWaktu = 'Jadwal hari ini selesai';
     }
 
-    // ---- Grid 3x2: sel1..sel5 = "Nama-JJ:MM" (mis. 'Subuh-04:16'),
-    //      sel6 KOSONG. Kelima waktu SELALU di-assign tiap refresh —
-    //      tanpa penanda ✓/▶/➜, sesuai permintaan pengguna. ----
+    // ---- Grid 2x2+Isya: sel1..sel5 = "Nama-JJ:MM" (mis. 'Subuh-04:16').
+    //      Kelima waktu SELALU di-assign tiap refresh — tanpa penanda
+    //      ✓/▶/➜, sesuai permintaan pengguna. ----
     for (var j = 0; j < KEYS.length; j++) {
       var it = (j < st.daftar.length) ? st.daftar[j] : null;
       var nama = it ? it.nama : NAMA_TAMPIL[KEYS[j]];
       var jam = (it && it.waktu) ? it.waktu : '--:--';
       this['sel' + (j + 1) + 'Teks'] = nama + '-' + jam;
     }
-    this.sel6Teks = '';
   }
 };
 

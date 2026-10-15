@@ -2,10 +2,10 @@
   ============================================================================
   index.hml — LAYAR UTAMA "KAPAN SOLAT" (LAYAR BULAT GT 7 Pro, 466x466 px)
   ============================================================================
-  VERSI STATIS + GRID 3 BARIS x 2 KOLOM (permintaan pengguna):
+  VERSI STATIS + GRID 2x2 + BARIS ISYA PENUH-TENGAH (permintaan pengguna):
       Subuh  |  Zuhur
       Ashar  |  Maghrib
-      Isya   |  (sel kosong)
+      [    Isya (satu baris penuh, tengah)    ]
 
   Fakta yang terbukti dari log DevEco + perilaku di jam Anda:
     1) Atribut `class` TIDAK BOLEH berisi {{ }} dalam bentuk apa pun
@@ -57,14 +57,14 @@
     <text class="t-kosong">Isi jadwal di common/jadwal-sholat.js</text>
   </div>
 
-  <!-- ============ GRID 5 WAKTU — 3 BARIS x 2 KOLOM ============
-      Urutan: [Subuh|Zuhur], [Ashar|Maghrib], [Isya|kosong].
-      Struktur TERDATAR yang mungkin untuk layout 2 kolom: dua <text>
-      langsung sebagai anak div.baris — TANPA div pembungkus ".sel"
-      (pembungkus itulah yang membuat baris ke-2 & ke-3 hilang pada
-      revisi sebelumnya). Tidak ada for-loop, tidak ada binding class,
-      tidak ada atribut kustom. Teks sel ke-6 dikosongkan via JS
-      (sel6Teks = ''). -->
+  <!-- ============ GRID 5 WAKTU — 2 BARIS x 2 KOLOM + 1 BARIS ISYA ============
+      Urutan: [Subuh|Zuhur], [Ashar|Maghrib], [Isya penuh-tengah].
+      Baris Isya: SATU <text> LANGSUNG sebagai anak div.baris (lebar penuh
+      418px) — TANPA div pembungkus ".sel" (pembungkus itulah yang membuat
+      baris ke-2 & ke-3 hilang pada revisi sebelumnya). Kedalaman render
+      seluruh baris identik dengan header (.box > text) yang selalu aman.
+      Sel ke-6 dihapus dari HML; teksnya juga dihapus dari JS.
+      Font TEGAS: font-weight bold + warna putih murni di semua teks. -->
   <div class="grid" if="{{ tersedia }}">
     <div class="baris">
       <text id="tSel1" class="sel sel-a">{{ sel1Teks }}</text>
@@ -75,8 +75,7 @@
       <text id="tSel4" class="sel sel-a">{{ sel4Teks }}</text>
     </div>
     <div class="baris">
-      <text id="tSel5" class="sel sel-a">{{ sel5Teks }}</text>
-      <text id="tSel6" class="sel sel-b">{{ sel6Teks }}</text>
+      <text id="tSel5" class="sel sel-isya">{{ sel5Teks }}</text>
     </div>
   </div>
 
